@@ -27,17 +27,13 @@ public class WalletTest {
     }
 
     @Test
-    public void testWalletSetAndGetBalance() {
-        Wallet wallet = new Wallet();
-
-        assertDoesNotThrow(() -> wallet.deposit(BigDecimal.valueOf(100.00)));
-    }
-
-    @Test
     public void testDepositPositiveAmount() {
         Wallet wallet = new Wallet();
+        BigDecimal expected = BigDecimal.valueOf(100);
 
-        assertDoesNotThrow(() -> wallet.deposit(BigDecimal.valueOf(100.00)));
+        BigDecimal actual = wallet.deposit(BigDecimal.valueOf(100));
+
+        assertEquals(expected, actual);
     }
 
     @Test
@@ -61,10 +57,12 @@ public class WalletTest {
     @Test
     public void testWithdrawWithSufficientFunds() {
         Wallet wallet = new Wallet();
-
         wallet.deposit(BigDecimal.valueOf(100));
+        BigDecimal expected = BigDecimal.valueOf(50);
 
-        assertDoesNotThrow(() -> wallet.withdraw(BigDecimal.valueOf(50)));
+        BigDecimal actual = wallet.withdraw(BigDecimal.valueOf(50));
+
+        assertEquals(expected, actual);
     }
 
     @Test

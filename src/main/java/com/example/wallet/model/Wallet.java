@@ -19,14 +19,15 @@ public class Wallet {
         this.balance = BigDecimal.ZERO;
     }
 
-    public void deposit(BigDecimal amount) {
+    public BigDecimal deposit(BigDecimal amount) {
         if (amount.compareTo(BigDecimal.ZERO) <= 0) {
             throw new DepositAmountMustBePositiveException("Deposit amount must be positive");
         }
         this.balance = this.balance.add(amount);
+        return this.balance;
     }
 
-    public void withdraw(BigDecimal amount) {
+    public BigDecimal withdraw(BigDecimal amount) {
         if (amount.compareTo(BigDecimal.ZERO) <= 0) {
             throw new WithdrawAmountMustBePositiveException("Withdrawal amount must be positive");
         }
@@ -34,5 +35,6 @@ public class Wallet {
             throw new InsufficientFundsException("Insufficient funds");
         }
         this.balance = this.balance.subtract(amount);
+        return this.balance;
     }
 }
