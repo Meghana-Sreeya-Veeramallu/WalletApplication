@@ -1,13 +1,10 @@
 package com.example.wallet.model;
 
+import com.example.wallet.Exceptions.BalanceCannotBeNegativeException;
 import jakarta.persistence.*;
-import lombok.Getter;
-import lombok.Setter;
 
 import java.math.BigDecimal;
 
-@Getter
-@Setter
 @Entity
 public class Wallet {
     @Id
@@ -19,10 +16,18 @@ public class Wallet {
     @MapsId
     private User user;
 
+    public Wallet() {
+        this.balance = BigDecimal.ZERO;
+    }
+
     public void setBalance(BigDecimal balance) {
         if (balance.compareTo(BigDecimal.ZERO) < 0) {
-            throw new IllegalArgumentException("Balance cannot be negative");
+            throw new BalanceCannotBeNegativeException("Balance cannot be negative");
         }
         this.balance = balance;
+    }
+
+    public BigDecimal getBalance() {
+        return balance;
     }
 }
