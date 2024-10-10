@@ -5,6 +5,7 @@ import com.example.wallet.Exceptions.UsernameCannotBeNullOrEmptyException;
 import jakarta.persistence.*;
 
 @Entity
+@Table(name = "users")
 public class User {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -12,8 +13,10 @@ public class User {
     private String username;
     private String password;
 
-    @OneToOne(mappedBy = "user", cascade = CascadeType.ALL)
+    @OneToOne(cascade = CascadeType.ALL)
     private Wallet wallet;
+
+    public User() {}
 
     public User(String username, String password) {
         if (username == null || username.trim().isEmpty()) {

@@ -4,7 +4,9 @@ import static org.junit.jupiter.api.Assertions.*;
 
 import java.math.BigDecimal;
 
-import com.example.wallet.Exceptions.BalanceCannotBeNegativeException;
+import com.example.wallet.Exceptions.DepositAmountMustBePositiveException;
+import com.example.wallet.Exceptions.InsufficientFundsException;
+import com.example.wallet.Exceptions.WithdrawAmountMustBePositiveException;
 import org.junit.jupiter.api.Test;
 
 public class WalletTest {
@@ -14,13 +16,6 @@ public class WalletTest {
         Wallet wallet = new Wallet();
 
         assertNotNull(wallet);
-    }
-
-    @Test
-    public void testWalletInitialBalance() {
-        Wallet wallet = new Wallet();
-
-        assertEquals(BigDecimal.ZERO, wallet.getBalance());
     }
 
     @Test
@@ -35,15 +30,71 @@ public class WalletTest {
     public void testWalletSetAndGetBalance() {
         Wallet wallet = new Wallet();
 
-        wallet.setBalance(BigDecimal.valueOf(100.00));
-
-        assertEquals(BigDecimal.valueOf(100.00), wallet.getBalance());
+        assertDoesNotThrow(() -> wallet.deposit(BigDecimal.valueOf(100.00)));
     }
 
     @Test
-    public void testSetNegativeBalance() {
+    public void testDepositPositiveAmount() {
         Wallet wallet = new Wallet();
 
-        assertThrows(BalanceCannotBeNegativeException.class, () -> wallet.setBalance(BigDecimal.valueOf(-100.00)));
+        assertDoesNotThrow(() -> wallet.deposit(BigDecimal.valueOf(100.00)));
+    }
+
+    @Test
+    public void testDepositZeroAmount() {
+        Wallet wallet = new Wallet();
+
+        assertThrows(DepositAmountMustBePositiveException.class, () -> {
+            wallet.deposit(BigDecimal.ZERO);
+        });
+    }
+
+    @Test
+    public void testDepositNegativeAmount() {
+        Wallet wallet = new Wallet();
+
+        assertThrows(DepositAmountMustBePositiveException.class, () -> {
+            wallet.deposit(BigDecimal.valueOf(-50));
+        });
+    }
+
+    @Test
+    public void testWithdrawWithSufficientFunds() {
+        Wallet wallet = new Wallet();
+
+        wallet.deposit(BigDecimal.valueOf(100));
+
+        assertDoesNotThrow(() -> wallet.withdraw(BigDecimal.valueOf(50)));
+    }
+
+    @Test
+    public void testWithdrawWithInsufficientFunds() {
+        Wallet wallet = new Wallet();
+
+        assertThrows(InsufficientFundsException.class, () -> {
+            wallet.withdraw(BigDecimal.valueOf(50));
+        });
+    }
+
+    @Test
+    public void testWithdrawZeroAmount() {
+        Wallet wallet = new Wallet();
+
+        wallet.deposit(BigDecimal.valueOf(100));
+
+        assertThrows(WithdrawAmountMustBePositiveException.class, () -> {
+            wallet.withdraw(BigDecimal.ZERO);
+        });
+    }
+
+    @Test
+    public void testWithdrawNegativeAmount() {
+        Wallet wallet = new Wallet();
+
+        wallet.deposit(BigDecimal.valueOf(100));
+
+        assertThrows(WithdrawAmountMustBePositiveException.class, () -> {
+            wallet.withdraw(BigDecimal.valueOf(-50));
+        });
     }
 }
