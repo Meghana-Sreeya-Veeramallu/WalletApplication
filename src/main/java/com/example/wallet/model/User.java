@@ -29,8 +29,4 @@ public class User {
         this.password = password;
         this.wallet = new Wallet();
     }
-
-    public Wallet getWallet() {
-        return wallet;
-    }
 }

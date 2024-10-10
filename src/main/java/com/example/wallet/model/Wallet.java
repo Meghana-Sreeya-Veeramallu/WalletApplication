@@ -15,6 +15,9 @@ public class Wallet {
     private Long id;
     private BigDecimal balance;
 
+    @OneToOne(cascade = CascadeType.ALL)
+    private User user;
+
     public Wallet() {
         this.balance = BigDecimal.ZERO;
     }

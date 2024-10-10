@@ -42,11 +42,4 @@ public class UserTest {
             new User("validUsername", "");
         });
     }
-
-    @Test
-    public void testUserWallet(){
-        User user = new User("testUser", "testPassword");
-
-        assertNotNull(user.getWallet());
-    }
 }

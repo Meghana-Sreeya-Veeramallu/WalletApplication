@@ -3,9 +3,12 @@ package com.example.wallet.service;
 import static org.mockito.Mockito.*;
 import static org.junit.jupiter.api.Assertions.*;
 
+import com.example.wallet.Exceptions.DepositAmountMustBePositiveException;
+import com.example.wallet.Exceptions.InsufficientFundsException;
 import com.example.wallet.Exceptions.UserNotFoundException;
-import com.example.wallet.model.User;
-import com.example.wallet.repository.UserRepository;
+import com.example.wallet.Exceptions.WithdrawAmountMustBePositiveException;
+import com.example.wallet.model.Wallet;
+import com.example.wallet.repository.WalletRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.InjectMocks;
@@ -21,76 +24,99 @@ public class WalletServiceTest {
     private WalletService walletService;
 
     @Mock
-    private UserRepository userRepository;
-
-    private User user;
+    private WalletRepository walletRepository;
 
     @BeforeEach
     public void setUp() {
         MockitoAnnotations.openMocks(this);
-        user = new User("testUser", "testPass");
     }
 
     @Test
     public void testDeposit() {
         Long userId = 1L;
         BigDecimal depositAmount = BigDecimal.valueOf(100);
-        when(userRepository.findById(userId)).thenReturn(Optional.of(user));
+        when(walletRepository.findByUserId(userId)).thenReturn(Optional.of(new Wallet()));
 
         BigDecimal newBalance = walletService.deposit(userId, depositAmount);
 
         assertEquals(BigDecimal.valueOf(100), newBalance);
-        verify(userRepository, times(1)).findById(userId);
+        verify(walletRepository, times(1)).findByUserId(userId);
+    }
+
+    @Test
+    public void testDepositNegativeAmount() {
+        Long userId = 1L;
+        BigDecimal depositAmount = BigDecimal.valueOf(-100);
+        when(walletRepository.findByUserId(userId)).thenReturn(Optional.of(new Wallet()));
+
+        assertThrows(DepositAmountMustBePositiveException.class, () -> {
+            walletService.deposit(userId, depositAmount);
+        });
+        verify(walletRepository, times(1)).findByUserId(userId);
     }
 
     @Test
     public void testDepositWithInvalidUser() {
         Long invalidUserId = 999L;
         BigDecimal depositAmount = BigDecimal.valueOf(100);
-        when(userRepository.findById(invalidUserId)).thenReturn(Optional.empty());
+        when(walletRepository.findByUserId(invalidUserId)).thenReturn(Optional.empty());
 
         assertThrows(UserNotFoundException.class, () -> {
             walletService.deposit(invalidUserId, depositAmount);
         });
-        verify(userRepository, times(1)).findById(invalidUserId);
+        verify(walletRepository, times(1)).findByUserId(invalidUserId);
     }
 
     @Test
     public void testWithdrawWithSufficientFunds() {
         Long userId = 1L;
         BigDecimal withdrawAmount = BigDecimal.valueOf(50);
-        when(userRepository.findById(userId)).thenReturn(Optional.of(user));
+        when(walletRepository.findByUserId(userId)).thenReturn(Optional.of(new Wallet()));
         walletService.deposit(userId, BigDecimal.valueOf(100));
 
         BigDecimal newBalance = walletService.withdraw(userId, withdrawAmount);
 
         assertEquals(BigDecimal.valueOf(50), newBalance);
-        verify(userRepository, times(2)).findById(userId);
+        verify(walletRepository, times(2)).findByUserId(userId);
+    }
+
+    @Test
+    public void testWithdrawNegativeAmount() {
+        Long userId = 1L;
+        BigDecimal withdrawAmount = BigDecimal.valueOf(-150);
+        when(walletRepository.findByUserId(userId)).thenReturn(Optional.of(new Wallet()));
+        walletService.deposit(userId, BigDecimal.valueOf(100));
+
+        assertThrows(WithdrawAmountMustBePositiveException.class, () -> {
+            walletService.withdraw(userId, withdrawAmount);
+        });
+
+        verify(walletRepository, times(2)).findByUserId(userId);
     }
 
     @Test
     public void testWithdrawWithInsufficientFunds() {
         Long userId = 1L;
         BigDecimal withdrawAmount = BigDecimal.valueOf(150);
-        when(userRepository.findById(userId)).thenReturn(Optional.of(user));
+        when(walletRepository.findByUserId(userId)).thenReturn(Optional.of(new Wallet()));
         walletService.deposit(userId, BigDecimal.valueOf(100));
 
-        assertThrows(RuntimeException.class, () -> {
+        assertThrows(InsufficientFundsException.class, () -> {
             walletService.withdraw(userId, withdrawAmount);
         });
 
-        verify(userRepository, times(2)).findById(userId);
+        verify(walletRepository, times(2)).findByUserId(userId);
     }
 
     @Test
     public void testWithdrawWithInvalidUser() {
         Long invalidUserId = 999L;
         BigDecimal withdrawAmount = BigDecimal.valueOf(50);
-        when(userRepository.findById(invalidUserId)).thenReturn(Optional.empty());
+        when(walletRepository.findByUserId(invalidUserId)).thenReturn(Optional.empty());
 
         assertThrows(UserNotFoundException.class, () -> {
             walletService.withdraw(invalidUserId, withdrawAmount);
         });
-        verify(userRepository, times(1)).findById(invalidUserId);
+        verify(walletRepository, times(1)).findByUserId(invalidUserId);
     }
 }
