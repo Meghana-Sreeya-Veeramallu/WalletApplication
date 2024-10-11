@@ -1,5 +1,7 @@
 package com.example.wallet.controller;
 
+import com.example.wallet.Exceptions.PasswordCannotBeNullOrEmptyException;
+import com.example.wallet.Exceptions.UsernameCannotBeNullOrEmptyException;
 import com.example.wallet.dto.RegistrationRequestBody;
 import com.example.wallet.model.User;
 import com.example.wallet.service.UserService;
@@ -9,7 +11,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
-@RequestMapping("/api/users")
+@RequestMapping("/users")
 public class UserController {
     private final UserService userService;
 
@@ -23,6 +25,8 @@ public class UserController {
         try {
             User user = userService.registerUser(request.getUsername(), request.getPassword());
             return ResponseEntity.ok(user);
+        } catch (UsernameCannotBeNullOrEmptyException | PasswordCannotBeNullOrEmptyException e) {
+            return ResponseEntity.badRequest().body("Bad request: " + e.getMessage());
         } catch (Exception e) {
             return ResponseEntity.internalServerError().body("An error occurred: " + e.getMessage());
         }

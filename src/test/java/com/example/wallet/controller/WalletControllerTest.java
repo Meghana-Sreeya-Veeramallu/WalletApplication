@@ -6,16 +6,22 @@ import com.example.wallet.Exceptions.UserNotFoundException;
 import com.example.wallet.Exceptions.WithdrawAmountMustBePositiveException;
 import com.example.wallet.dto.TransactionRequestBody;
 import com.example.wallet.service.WalletService;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
-import org.springframework.http.HttpStatus;
-import org.springframework.http.ResponseEntity;
+import org.springframework.http.MediaType;
+import org.springframework.test.web.servlet.MockMvc;
+import org.springframework.test.web.servlet.MvcResult;
+import org.springframework.test.web.servlet.request.MockMvcRequestBuilders;
+import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.mockito.Mockito.when;
+import static org.mockito.Mockito.*;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 class WalletControllerTest {
 
@@ -25,92 +31,145 @@ class WalletControllerTest {
     @Mock
     private WalletService walletService;
 
+    private MockMvc mockMvc;
+    private ObjectMapper objectMapper;
+
     @BeforeEach
     void setUp() {
         MockitoAnnotations.openMocks(this);
+        mockMvc = MockMvcBuilders.standaloneSetup(walletController).build();
+        objectMapper = new ObjectMapper();
     }
 
     @Test
-    void testDepositWhenSuccessful() {
+    void testDepositWhenSuccessful() throws Exception {
         String username = "testUser";
         Double amount = 100.0;
+        TransactionRequestBody requestBody = new TransactionRequestBody(username, amount);
+        String jsonRequestBody = objectMapper.writeValueAsString(requestBody);
+
         when(walletService.deposit(username, amount)).thenReturn(amount);
 
-        ResponseEntity<?> response = walletController.deposit(new TransactionRequestBody(username, amount));
+        MvcResult mvcResult = mockMvc.perform(MockMvcRequestBuilders.post("/users/deposit")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(jsonRequestBody))
+                .andExpect(status().isOk())
+                .andReturn();
 
-        assertEquals(HttpStatus.OK, response.getStatusCode());
-        assertEquals(amount, response.getBody());
+        Double responseBody = objectMapper.readValue(mvcResult.getResponse().getContentAsString(), Double.class);
+        assertEquals(amount, responseBody);
+
+        verify(walletService, times(1)).deposit(username, amount);
     }
 
     @Test
-    void testDepositWhenUserNotFoundException() {
+    void testDepositWhenUserNotFoundException() throws Exception {
         String username = "invalidUser";
         Double amount = 100.0;
+        TransactionRequestBody requestBody = new TransactionRequestBody(username, amount);
+        String jsonRequestBody = objectMapper.writeValueAsString(requestBody);
+
         when(walletService.deposit(username, amount)).thenThrow(new UserNotFoundException("User not found"));
 
-        ResponseEntity<?> response = walletController.deposit(new TransactionRequestBody(username, amount));
+        mockMvc.perform(MockMvcRequestBuilders.post("/users/deposit")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(jsonRequestBody))
+                .andExpect(status().isNotFound())
+                .andExpect(content().string("User not found"));
 
-        assertEquals(HttpStatus.INTERNAL_SERVER_ERROR, response.getStatusCode());
-        assertEquals("An error occurred: User not found", response.getBody());
+        verify(walletService, times(1)).deposit(username, amount);
     }
 
     @Test
-    void testDepositWhenDepositAmountIsNegative() {
+    void testDepositWhenDepositAmountIsNegative() throws Exception {
         String username = "testUser";
         Double amount = -100.0;
+        TransactionRequestBody requestBody = new TransactionRequestBody(username, amount);
+        String jsonRequestBody = objectMapper.writeValueAsString(requestBody);
+
         when(walletService.deposit(username, amount)).thenThrow(new DepositAmountMustBePositiveException("Deposit amount must be positive"));
 
-        ResponseEntity<?> response = walletController.deposit(new TransactionRequestBody(username, amount));
+        mockMvc.perform(MockMvcRequestBuilders.post("/users/deposit")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(jsonRequestBody))
+                .andExpect(status().isBadRequest())
+                .andExpect(content().string("Bad request: Deposit amount must be positive"));
 
-        assertEquals(HttpStatus.INTERNAL_SERVER_ERROR, response.getStatusCode());
-        assertEquals("An error occurred: Deposit amount must be positive", response.getBody());
+        verify(walletService, times(1)).deposit(username, amount);
     }
 
     @Test
-    void testWithdrawWhenSuccessful() {
+    void testWithdrawWhenSuccessful() throws Exception {
         String username = "testUser";
         Double amount = 100.0;
+        TransactionRequestBody requestBody = new TransactionRequestBody(username, amount);
+        String jsonRequestBody = objectMapper.writeValueAsString(requestBody);
+
         when(walletService.withdraw(username, amount)).thenReturn(amount);
 
-        ResponseEntity<?> response = walletController.withdraw(new TransactionRequestBody(username, amount));
+        MvcResult mvcResult = mockMvc.perform(MockMvcRequestBuilders.post("/users/withdraw")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(jsonRequestBody))
+                .andExpect(status().isOk())
+                .andReturn();;
 
-        assertEquals(HttpStatus.OK, response.getStatusCode());
-        assertEquals(amount, response.getBody());
+        Double responseBody = objectMapper.readValue(mvcResult.getResponse().getContentAsString(), Double.class);
+        assertEquals(amount, responseBody);
+
+        verify(walletService, times(1)).withdraw(username, amount);
     }
 
     @Test
-    void testWithdrawWhenUserNotFoundException() {
+    void testWithdrawWhenUserNotFoundException() throws Exception {
         String username = "invalidUser";
         Double amount = 100.0;
+        TransactionRequestBody requestBody = new TransactionRequestBody(username, amount);
+        String jsonRequestBody = objectMapper.writeValueAsString(requestBody);
+
         when(walletService.withdraw(username, amount)).thenThrow(new UserNotFoundException("User not found"));
 
-        ResponseEntity<?> response = walletController.withdraw(new TransactionRequestBody(username, amount));
+        mockMvc.perform(MockMvcRequestBuilders.post("/users/withdraw")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(jsonRequestBody))
+                .andExpect(status().isNotFound())
+                .andExpect(content().string("User not found"));
 
-        assertEquals(HttpStatus.INTERNAL_SERVER_ERROR, response.getStatusCode());
-        assertEquals("An error occurred: User not found", response.getBody());
+        verify(walletService, times(1)).withdraw(username, amount);
     }
 
     @Test
-    void testWithdrawWhenWithdrawAmountIsNegative() {
+    void testWithdrawWhenWithdrawAmountIsNegative() throws Exception {
         String username = "testUser";
         Double amount = -100.0;
+        TransactionRequestBody requestBody = new TransactionRequestBody(username, amount);
+        String jsonRequestBody = objectMapper.writeValueAsString(requestBody);
+
         when(walletService.withdraw(username, amount)).thenThrow(new WithdrawAmountMustBePositiveException("Withdraw amount must be positive"));
 
-        ResponseEntity<?> response = walletController.withdraw(new TransactionRequestBody(username, amount));
+        mockMvc.perform(MockMvcRequestBuilders.post("/users/withdraw")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(jsonRequestBody))
+                .andExpect(status().isBadRequest())
+                .andExpect(content().string("Bad request: Withdraw amount must be positive"));
 
-        assertEquals(HttpStatus.INTERNAL_SERVER_ERROR, response.getStatusCode());
-        assertEquals("An error occurred: Withdraw amount must be positive", response.getBody());
+        verify(walletService, times(1)).withdraw(username, amount);
     }
 
     @Test
-    void testWithdrawWhenInsufficientFundsException() {
+    void testWithdrawWhenInsufficientFundsException() throws Exception {
         String username = "testUser";
         Double amount = 50.0;
+        TransactionRequestBody requestBody = new TransactionRequestBody(username, amount);
+        String jsonRequestBody = objectMapper.writeValueAsString(requestBody);
+
         when(walletService.withdraw(username, amount)).thenThrow(new InsufficientFundsException("Insufficient funds"));
 
-        ResponseEntity<?> response = walletController.withdraw(new TransactionRequestBody(username, amount));
+        mockMvc.perform(MockMvcRequestBuilders.post("/users/withdraw")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(jsonRequestBody))
+                .andExpect(status().isBadRequest())
+                .andExpect(content().string("Bad request: Insufficient funds"));
 
-        assertEquals(HttpStatus.INTERNAL_SERVER_ERROR, response.getStatusCode());
-        assertEquals("An error occurred: Insufficient funds", response.getBody());
+        verify(walletService, times(1)).withdraw(username, amount);
     }
 }
