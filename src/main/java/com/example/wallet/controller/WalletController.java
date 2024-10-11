@@ -4,7 +4,7 @@ import com.example.wallet.Exceptions.DepositAmountMustBePositiveException;
 import com.example.wallet.Exceptions.InsufficientFundsException;
 import com.example.wallet.Exceptions.UserNotFoundException;
 import com.example.wallet.Exceptions.WithdrawAmountMustBePositiveException;
-import com.example.wallet.dto.TransactionRequestBody;
+import com.example.wallet.dto.TransactionDto;
 import com.example.wallet.service.WalletService;
 import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -23,7 +23,7 @@ public class WalletController {
     }
 
     @PostMapping("/deposit")
-    public ResponseEntity<?> deposit(@RequestBody @Valid TransactionRequestBody request) {
+    public ResponseEntity<?> deposit(@RequestBody @Valid TransactionDto request) {
         try {
             Double amount = walletService.deposit(request.getUsername(), request.getAmount());
             return ResponseEntity.ok(amount);
@@ -37,7 +37,7 @@ public class WalletController {
     }
 
     @PostMapping("/withdraw")
-    public ResponseEntity<?> withdraw(@RequestBody @Valid TransactionRequestBody request) {
+    public ResponseEntity<?> withdraw(@RequestBody @Valid TransactionDto request) {
         try {
             Double amount = walletService.withdraw(request.getUsername(), request.getAmount());
             return ResponseEntity.ok(amount);

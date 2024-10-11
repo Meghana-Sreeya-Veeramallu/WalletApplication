@@ -7,7 +7,7 @@ import lombok.NoArgsConstructor;
 @Getter
 @AllArgsConstructor
 @NoArgsConstructor
-public class TransactionRequestBody {
+public class RegistrationDto {
     private String username;
-    private Double amount;
+    private String password;
 }

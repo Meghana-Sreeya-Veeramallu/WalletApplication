@@ -2,7 +2,7 @@ package com.example.wallet.controller;
 
 import com.example.wallet.Exceptions.PasswordCannotBeNullOrEmptyException;
 import com.example.wallet.Exceptions.UsernameCannotBeNullOrEmptyException;
-import com.example.wallet.dto.RegistrationRequestBody;
+import com.example.wallet.dto.RegistrationDto;
 import com.example.wallet.model.User;
 import com.example.wallet.service.UserService;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -44,15 +44,15 @@ class UserControllerTest {
     void testRegisterWhenSuccessful() throws Exception {
         String username = "testUser";
         String password = "testPassword";
-        RegistrationRequestBody request = new RegistrationRequestBody(username, password);
-        String requestBody = objectMapper.writeValueAsString(request);
+        RegistrationDto requestBody = new RegistrationDto(username, password);
+        String jsonRequestBody = objectMapper.writeValueAsString(requestBody);
         User mockUser = new User(username, password);
 
         when(userService.registerUser(username, password)).thenReturn(mockUser);
 
         MvcResult mvcResult = mockMvc.perform(MockMvcRequestBuilders.post("/users/register")
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content(requestBody))
+                        .content(jsonRequestBody))
                 .andExpect(status().isOk()).andReturn();
 
         String response = mvcResult.getResponse().getContentAsString();
@@ -66,14 +66,14 @@ class UserControllerTest {
     void testRegisterWhenUserIsNull() throws Exception {
         String username = "";
         String password = "testPassword";
-        RegistrationRequestBody request = new RegistrationRequestBody(username, password);
-        String requestBody = objectMapper.writeValueAsString(request);
+        RegistrationDto requestBody = new RegistrationDto(username, password);
+        String jsonRequestBody = objectMapper.writeValueAsString(requestBody);
 
         when(userService.registerUser(username, password)).thenThrow(new UsernameCannotBeNullOrEmptyException("Username cannot be null or empty"));
 
         mockMvc.perform(MockMvcRequestBuilders.post("/users/register")
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content(requestBody))
+                        .content(jsonRequestBody))
                 .andExpect(status().isBadRequest())
                 .andExpect(content().string("Bad request: Username cannot be null or empty"));
 
@@ -84,14 +84,14 @@ class UserControllerTest {
     void testRegisterWhenPasswordIsNull() throws Exception {
         String username = "testUser";
         String password = "";
-        RegistrationRequestBody request = new RegistrationRequestBody(username, password);
-        String requestBody = objectMapper.writeValueAsString(request);
+        RegistrationDto requestBody = new RegistrationDto(username, password);
+        String jsonRequestBody = objectMapper.writeValueAsString(requestBody);
 
         when(userService.registerUser(username, password)).thenThrow(new PasswordCannotBeNullOrEmptyException("Password cannot be null or empty"));
 
         mockMvc.perform(MockMvcRequestBuilders.post("/users/register")
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content(requestBody))
+                        .content(jsonRequestBody))
                 .andExpect(status().isBadRequest())
                 .andExpect(content().string("Bad request: Password cannot be null or empty"));
 

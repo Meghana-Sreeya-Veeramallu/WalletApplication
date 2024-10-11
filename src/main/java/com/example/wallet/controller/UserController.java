@@ -2,7 +2,7 @@ package com.example.wallet.controller;
 
 import com.example.wallet.Exceptions.PasswordCannotBeNullOrEmptyException;
 import com.example.wallet.Exceptions.UsernameCannotBeNullOrEmptyException;
-import com.example.wallet.dto.RegistrationRequestBody;
+import com.example.wallet.dto.RegistrationDto;
 import com.example.wallet.model.User;
 import com.example.wallet.service.UserService;
 import jakarta.validation.Valid;
@@ -21,7 +21,7 @@ public class UserController {
     }
 
     @PostMapping("/register")
-    public ResponseEntity<?> register(@RequestBody @Valid RegistrationRequestBody request) {
+    public ResponseEntity<?> register(@RequestBody @Valid RegistrationDto request) {
         try {
             User user = userService.registerUser(request.getUsername(), request.getPassword());
             return ResponseEntity.ok(user);

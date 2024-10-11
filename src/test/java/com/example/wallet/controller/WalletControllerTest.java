@@ -4,7 +4,7 @@ import com.example.wallet.Exceptions.DepositAmountMustBePositiveException;
 import com.example.wallet.Exceptions.InsufficientFundsException;
 import com.example.wallet.Exceptions.UserNotFoundException;
 import com.example.wallet.Exceptions.WithdrawAmountMustBePositiveException;
-import com.example.wallet.dto.TransactionRequestBody;
+import com.example.wallet.dto.TransactionDto;
 import com.example.wallet.service.WalletService;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.jupiter.api.BeforeEach;
@@ -45,7 +45,7 @@ class WalletControllerTest {
     void testDepositWhenSuccessful() throws Exception {
         String username = "testUser";
         Double amount = 100.0;
-        TransactionRequestBody requestBody = new TransactionRequestBody(username, amount);
+        TransactionDto requestBody = new TransactionDto(username, amount);
         String jsonRequestBody = objectMapper.writeValueAsString(requestBody);
 
         when(walletService.deposit(username, amount)).thenReturn(amount);
@@ -66,7 +66,7 @@ class WalletControllerTest {
     void testDepositWhenUserNotFoundException() throws Exception {
         String username = "invalidUser";
         Double amount = 100.0;
-        TransactionRequestBody requestBody = new TransactionRequestBody(username, amount);
+        TransactionDto requestBody = new TransactionDto(username, amount);
         String jsonRequestBody = objectMapper.writeValueAsString(requestBody);
 
         when(walletService.deposit(username, amount)).thenThrow(new UserNotFoundException("User not found"));
@@ -84,7 +84,7 @@ class WalletControllerTest {
     void testDepositWhenDepositAmountIsNegative() throws Exception {
         String username = "testUser";
         Double amount = -100.0;
-        TransactionRequestBody requestBody = new TransactionRequestBody(username, amount);
+        TransactionDto requestBody = new TransactionDto(username, amount);
         String jsonRequestBody = objectMapper.writeValueAsString(requestBody);
 
         when(walletService.deposit(username, amount)).thenThrow(new DepositAmountMustBePositiveException("Deposit amount must be positive"));
@@ -102,7 +102,7 @@ class WalletControllerTest {
     void testWithdrawWhenSuccessful() throws Exception {
         String username = "testUser";
         Double amount = 100.0;
-        TransactionRequestBody requestBody = new TransactionRequestBody(username, amount);
+        TransactionDto requestBody = new TransactionDto(username, amount);
         String jsonRequestBody = objectMapper.writeValueAsString(requestBody);
 
         when(walletService.withdraw(username, amount)).thenReturn(amount);
@@ -123,7 +123,7 @@ class WalletControllerTest {
     void testWithdrawWhenUserNotFoundException() throws Exception {
         String username = "invalidUser";
         Double amount = 100.0;
-        TransactionRequestBody requestBody = new TransactionRequestBody(username, amount);
+        TransactionDto requestBody = new TransactionDto(username, amount);
         String jsonRequestBody = objectMapper.writeValueAsString(requestBody);
 
         when(walletService.withdraw(username, amount)).thenThrow(new UserNotFoundException("User not found"));
@@ -141,7 +141,7 @@ class WalletControllerTest {
     void testWithdrawWhenWithdrawAmountIsNegative() throws Exception {
         String username = "testUser";
         Double amount = -100.0;
-        TransactionRequestBody requestBody = new TransactionRequestBody(username, amount);
+        TransactionDto requestBody = new TransactionDto(username, amount);
         String jsonRequestBody = objectMapper.writeValueAsString(requestBody);
 
         when(walletService.withdraw(username, amount)).thenThrow(new WithdrawAmountMustBePositiveException("Withdraw amount must be positive"));
@@ -159,7 +159,7 @@ class WalletControllerTest {
     void testWithdrawWhenInsufficientFundsException() throws Exception {
         String username = "testUser";
         Double amount = 50.0;
-        TransactionRequestBody requestBody = new TransactionRequestBody(username, amount);
+        TransactionDto requestBody = new TransactionDto(username, amount);
         String jsonRequestBody = objectMapper.writeValueAsString(requestBody);
 
         when(walletService.withdraw(username, amount)).thenThrow(new InsufficientFundsException("Insufficient funds"));
