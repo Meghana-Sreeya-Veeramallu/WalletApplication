@@ -1,12 +1,13 @@
 package com.example.wallet.controller;
 
-import com.example.wallet.Exceptions.PasswordCannotBeNullOrEmptyException;
-import com.example.wallet.Exceptions.UsernameCannotBeNullOrEmptyException;
+import com.example.wallet.Exceptions.*;
 import com.example.wallet.dto.RegistrationDto;
+import com.example.wallet.dto.TransactionDto;
 import com.example.wallet.model.User;
 import com.example.wallet.service.UserService;
 import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -26,6 +27,34 @@ public class UserController {
             User user = userService.registerUser(request.getUsername(), request.getPassword());
             return ResponseEntity.ok(user);
         } catch (UsernameCannotBeNullOrEmptyException | PasswordCannotBeNullOrEmptyException e) {
+            return ResponseEntity.badRequest().body("Bad request: " + e.getMessage());
+        } catch (Exception e) {
+            return ResponseEntity.internalServerError().body("An error occurred: " + e.getMessage());
+        }
+    }
+
+    @PostMapping("/deposit")
+    public ResponseEntity<?> deposit(@RequestBody @Valid TransactionDto request) {
+        try {
+            Double amount = userService.deposit(request.getUsername(), request.getAmount());
+            return ResponseEntity.ok(amount);
+        } catch (UserNotFoundException e) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body("User not found");
+        } catch (DepositAmountMustBePositiveException e) {
+            return ResponseEntity.badRequest().body("Bad request: " + e.getMessage());
+        } catch (Exception e) {
+            return ResponseEntity.internalServerError().body("An error occurred: " + e.getMessage());
+        }
+    }
+
+    @PostMapping("/withdraw")
+    public ResponseEntity<?> withdraw(@RequestBody @Valid TransactionDto request) {
+        try {
+            Double amount = userService.withdraw(request.getUsername(), request.getAmount());
+            return ResponseEntity.ok(amount);
+        } catch (UserNotFoundException e) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body("User not found");
+        } catch (WithdrawAmountMustBePositiveException | InsufficientFundsException e) {
             return ResponseEntity.badRequest().body("Bad request: " + e.getMessage());
         } catch (Exception e) {
             return ResponseEntity.internalServerError().body("An error occurred: " + e.getMessage());
