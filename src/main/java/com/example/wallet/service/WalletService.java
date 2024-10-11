@@ -1,8 +1,8 @@
 package com.example.wallet.service;
 
 import com.example.wallet.Exceptions.UserNotFoundException;
-import com.example.wallet.model.Wallet;
-import com.example.wallet.repository.WalletRepository;
+import com.example.wallet.model.User;
+import com.example.wallet.repository.UserRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
@@ -10,20 +10,20 @@ import java.math.BigDecimal;
 
 @Service
 public class WalletService {
-    private final WalletRepository walletRepository;
+    private final UserRepository userRepository;
 
     @Autowired
-    public WalletService(WalletRepository walletRepository) {
-        this.walletRepository = walletRepository;
+    public WalletService(UserRepository userRepository) {
+        this.userRepository = userRepository;
     }
 
-    public BigDecimal deposit(Long userId, BigDecimal amount) {
-        Wallet wallet = walletRepository.findByUserId(userId).orElseThrow(() -> new UserNotFoundException("User not found"));
-        return wallet.deposit(amount);
+    public BigDecimal deposit(String username, BigDecimal amount) {
+        User user = userRepository.findByUsername(username).orElseThrow(() -> new UserNotFoundException("User not found"));
+        return user.deposit(amount);
     }
 
-    public BigDecimal withdraw(Long userId, BigDecimal amount) {
-        Wallet wallet = walletRepository.findByUserId(userId).orElseThrow(() -> new UserNotFoundException("User not found"));
-        return wallet.withdraw(amount);
+    public BigDecimal withdraw(String username, BigDecimal amount) {
+        User user = userRepository.findByUsername(username).orElseThrow(() -> new UserNotFoundException("User not found"));
+        return user.withdraw(amount);
     }
 }
