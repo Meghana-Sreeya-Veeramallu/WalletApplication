@@ -4,8 +4,6 @@ import com.example.wallet.Exceptions.PasswordCannotBeNullOrEmptyException;
 import com.example.wallet.Exceptions.UsernameCannotBeNullOrEmptyException;
 import jakarta.persistence.*;
 
-import java.math.BigDecimal;
-
 @Entity
 @Table(name = "users")
 public class User {
@@ -33,11 +31,11 @@ public class User {
         this.wallet = new Wallet();
     }
 
-    public BigDecimal deposit(BigDecimal amount) {
+    public Double deposit(Double amount) {
         return wallet.deposit(amount);
     }
 
-    public BigDecimal withdraw(BigDecimal amount) {
+    public Double withdraw(Double amount) {
         return wallet.withdraw(amount);
     }
 }

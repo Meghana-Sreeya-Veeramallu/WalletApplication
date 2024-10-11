@@ -15,7 +15,6 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
 
-import java.math.BigDecimal;
 import java.util.Optional;
 
 public class WalletServiceTest {
@@ -39,18 +38,18 @@ public class WalletServiceTest {
 
     @Test
      void testDeposit() {
-        BigDecimal depositAmount = BigDecimal.valueOf(100);
+        Double depositAmount = 100.0;
         when(userRepository.findByUsername(username)).thenReturn(Optional.of(user));
 
-        BigDecimal newBalance = walletService.deposit(username, depositAmount);
+        Double newBalance = walletService.deposit(username, depositAmount);
 
-        assertEquals(BigDecimal.valueOf(100), newBalance);
+        assertEquals(depositAmount, newBalance);
         verify(userRepository, times(1)).findByUsername(username);
     }
 
     @Test
      void testDepositNegativeAmount() {
-        BigDecimal depositAmount = BigDecimal.valueOf(-100);
+        Double depositAmount = -100.0;
         when(userRepository.findByUsername(username)).thenReturn(Optional.of(user));
 
         assertThrows(DepositAmountMustBePositiveException.class, () -> {
@@ -62,7 +61,7 @@ public class WalletServiceTest {
     @Test
      void testDepositWithInvalidUser() {
         String invalidUsername = "invalidUsername";
-        BigDecimal depositAmount = BigDecimal.valueOf(100);
+        Double depositAmount = 100.0;
         when(userRepository.findByUsername(invalidUsername)).thenReturn(Optional.empty());
 
         assertThrows(UserNotFoundException.class, () -> {
@@ -73,21 +72,21 @@ public class WalletServiceTest {
 
     @Test
      void testWithdrawWithSufficientFunds() {
-        BigDecimal withdrawAmount = BigDecimal.valueOf(50);
+        Double withdrawAmount = 50.0;
         when(userRepository.findByUsername(username)).thenReturn(Optional.of(user));
-        walletService.deposit(username, BigDecimal.valueOf(100));
+        walletService.deposit(username, 100.0);
 
-        BigDecimal newBalance = walletService.withdraw(username, withdrawAmount);
+        Double newBalance = walletService.withdraw(username, withdrawAmount);
 
-        assertEquals(BigDecimal.valueOf(50), newBalance);
+        assertEquals(50.0, newBalance);
         verify(userRepository, times(2)).findByUsername(username);
     }
 
     @Test
      void testWithdrawNegativeAmount() {
-        BigDecimal withdrawAmount = BigDecimal.valueOf(-150);
+        Double withdrawAmount = -150.0;
         when(userRepository.findByUsername(username)).thenReturn(Optional.of(user));
-        walletService.deposit(username, BigDecimal.valueOf(100));
+        walletService.deposit(username, 100.0);
 
         assertThrows(WithdrawAmountMustBePositiveException.class, () -> {
             walletService.withdraw(username, withdrawAmount);
@@ -97,9 +96,9 @@ public class WalletServiceTest {
 
     @Test
      void testWithdrawWithInsufficientFunds() {
-        BigDecimal withdrawAmount = BigDecimal.valueOf(150);
+        Double withdrawAmount = 150.0;
         when(userRepository.findByUsername(username)).thenReturn(Optional.of(user));
-        walletService.deposit(username, BigDecimal.valueOf(100));
+        walletService.deposit(username, 100.0);
 
         assertThrows(InsufficientFundsException.class, () -> {
             walletService.withdraw(username, withdrawAmount);
@@ -110,7 +109,7 @@ public class WalletServiceTest {
     @Test
      void testWithdrawWithInvalidUser() {
         String invalidUsername = "invalidUsername";
-        BigDecimal withdrawAmount = BigDecimal.valueOf(50);
+        Double withdrawAmount = 50.0;
         when(userRepository.findByUsername(invalidUsername)).thenReturn(Optional.empty());
 
         assertThrows(UserNotFoundException.class, () -> {

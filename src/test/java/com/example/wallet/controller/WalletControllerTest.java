@@ -13,8 +13,6 @@ import org.mockito.MockitoAnnotations;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 
-import java.math.BigDecimal;
-
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.Mockito.when;
 
@@ -34,7 +32,7 @@ class WalletControllerTest {
     @Test
     void testDepositWhenSuccessful() {
         String username = "testUser";
-        BigDecimal amount = new BigDecimal("100.00");
+        Double amount = 100.0;
         when(walletService.deposit(username, amount)).thenReturn(amount);
 
         ResponseEntity<?> response = walletController.deposit(username, amount);
@@ -46,7 +44,7 @@ class WalletControllerTest {
     @Test
     void testDepositWhenUserNotFoundException() {
         String username = "invalidUser";
-        BigDecimal amount = new BigDecimal("100.00");
+        Double amount = 100.0;
         when(walletService.deposit(username, amount)).thenThrow(new UserNotFoundException("User not found"));
 
         ResponseEntity<?> response = walletController.deposit(username, amount);
@@ -58,7 +56,7 @@ class WalletControllerTest {
     @Test
     void testDepositWhenDepositAmountIsNegative() {
         String username = "testUser";
-        BigDecimal amount = new BigDecimal("-100.00");
+        Double amount = 100.0;
         when(walletService.deposit(username, amount)).thenThrow(new DepositAmountMustBePositiveException("Deposit amount must be positive"));
 
         ResponseEntity<?> response = walletController.deposit(username, amount);
@@ -70,7 +68,7 @@ class WalletControllerTest {
     @Test
     void testWithdrawWhenSuccessful() {
         String username = "testUser";
-        BigDecimal amount = new BigDecimal("50.00");
+        Double amount = 100.0;
         when(walletService.withdraw(username, amount)).thenReturn(amount);
 
         ResponseEntity<?> response = walletController.withdraw(username, amount);
@@ -82,7 +80,7 @@ class WalletControllerTest {
     @Test
     void testWithdrawWhenUserNotFoundException() {
         String username = "invalidUser";
-        BigDecimal amount = new BigDecimal("100.00");
+        Double amount = 100.0;
         when(walletService.withdraw(username, amount)).thenThrow(new UserNotFoundException("User not found"));
 
         ResponseEntity<?> response = walletController.withdraw(username, amount);
@@ -94,7 +92,7 @@ class WalletControllerTest {
     @Test
     void testDepositWhenWithdrawAmountIsNegative() {
         String username = "testUser";
-        BigDecimal amount = new BigDecimal("-100.00");
+        Double amount = -100.0;
         when(walletService.withdraw(username, amount)).thenThrow(new WithdrawAmountMustBePositiveException("Withdraw amount must be positive"));
 
         ResponseEntity<?> response = walletController.withdraw(username, amount);
@@ -106,7 +104,7 @@ class WalletControllerTest {
     @Test
     void testWithdrawWhenInsufficientFundsException() {
         String username = "testUser";
-        BigDecimal amount = new BigDecimal("50.00");
+        Double amount = 50.0;
         when(walletService.withdraw(username, amount)).thenThrow(new InsufficientFundsException("Insufficient funds"));
 
         ResponseEntity<?> response = walletController.withdraw(username, amount);

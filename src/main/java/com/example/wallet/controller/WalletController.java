@@ -1,12 +1,9 @@
 package com.example.wallet.controller;
 
-import com.example.wallet.model.User;
 import com.example.wallet.service.WalletService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
-
-import java.math.BigDecimal;
 
 @RestController
 @RequestMapping("/api/wallets")
@@ -19,7 +16,7 @@ public class WalletController {
     }
 
     @PostMapping("/deposit")
-    public ResponseEntity<?> deposit(@RequestParam String username, @RequestParam BigDecimal amount) {
+    public ResponseEntity<?> deposit(@RequestParam String username, @RequestParam Double amount) {
         try{
             return ResponseEntity.ok(walletService.deposit(username, amount));
         } catch (Exception e){
@@ -28,7 +25,7 @@ public class WalletController {
     }
 
     @PostMapping("/withdraw")
-    public ResponseEntity<?> withdraw(@RequestParam String username, @RequestParam BigDecimal amount) {
+    public ResponseEntity<?> withdraw(@RequestParam String username, @RequestParam Double amount) {
         try{
             return ResponseEntity.ok(walletService.withdraw(username, amount));
         } catch (Exception e){

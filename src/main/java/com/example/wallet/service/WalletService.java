@@ -5,8 +5,7 @@ import com.example.wallet.model.User;
 import com.example.wallet.repository.UserRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
-
-import java.math.BigDecimal;
+import org.springframework.transaction.annotation.Transactional;
 
 @Service
 public class WalletService {
@@ -17,12 +16,14 @@ public class WalletService {
         this.userRepository = userRepository;
     }
 
-    public BigDecimal deposit(String username, BigDecimal amount) {
+    @Transactional
+    public Double deposit(String username, Double amount) {
         User user = userRepository.findByUsername(username).orElseThrow(() -> new UserNotFoundException("User not found"));
         return user.deposit(amount);
     }
 
-    public BigDecimal withdraw(String username, BigDecimal amount) {
+    @Transactional
+    public Double withdraw(String username, Double amount) {
         User user = userRepository.findByUsername(username).orElseThrow(() -> new UserNotFoundException("User not found"));
         return user.withdraw(amount);
     }
