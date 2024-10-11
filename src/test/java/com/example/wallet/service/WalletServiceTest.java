@@ -30,7 +30,7 @@ public class WalletServiceTest {
     private UserRepository userRepository;
 
     @BeforeEach
-    public void setUp() {
+     void setUp() {
         MockitoAnnotations.openMocks(this);
         username = "testUser";
         password = "testPassword";
@@ -38,7 +38,7 @@ public class WalletServiceTest {
     }
 
     @Test
-    public void testDeposit() {
+     void testDeposit() {
         BigDecimal depositAmount = BigDecimal.valueOf(100);
         when(userRepository.findByUsername(username)).thenReturn(Optional.of(user));
 
@@ -49,7 +49,7 @@ public class WalletServiceTest {
     }
 
     @Test
-    public void testDepositNegativeAmount() {
+     void testDepositNegativeAmount() {
         BigDecimal depositAmount = BigDecimal.valueOf(-100);
         when(userRepository.findByUsername(username)).thenReturn(Optional.of(user));
 
@@ -60,7 +60,7 @@ public class WalletServiceTest {
     }
 
     @Test
-    public void testDepositWithInvalidUser() {
+     void testDepositWithInvalidUser() {
         String invalidUsername = "invalidUsername";
         BigDecimal depositAmount = BigDecimal.valueOf(100);
         when(userRepository.findByUsername(invalidUsername)).thenReturn(Optional.empty());
@@ -72,7 +72,7 @@ public class WalletServiceTest {
     }
 
     @Test
-    public void testWithdrawWithSufficientFunds() {
+     void testWithdrawWithSufficientFunds() {
         BigDecimal withdrawAmount = BigDecimal.valueOf(50);
         when(userRepository.findByUsername(username)).thenReturn(Optional.of(user));
         walletService.deposit(username, BigDecimal.valueOf(100));
@@ -84,7 +84,7 @@ public class WalletServiceTest {
     }
 
     @Test
-    public void testWithdrawNegativeAmount() {
+     void testWithdrawNegativeAmount() {
         BigDecimal withdrawAmount = BigDecimal.valueOf(-150);
         when(userRepository.findByUsername(username)).thenReturn(Optional.of(user));
         walletService.deposit(username, BigDecimal.valueOf(100));
@@ -96,7 +96,7 @@ public class WalletServiceTest {
     }
 
     @Test
-    public void testWithdrawWithInsufficientFunds() {
+     void testWithdrawWithInsufficientFunds() {
         BigDecimal withdrawAmount = BigDecimal.valueOf(150);
         when(userRepository.findByUsername(username)).thenReturn(Optional.of(user));
         walletService.deposit(username, BigDecimal.valueOf(100));
@@ -108,7 +108,7 @@ public class WalletServiceTest {
     }
 
     @Test
-    public void testWithdrawWithInvalidUser() {
+     void testWithdrawWithInvalidUser() {
         String invalidUsername = "invalidUsername";
         BigDecimal withdrawAmount = BigDecimal.valueOf(50);
         when(userRepository.findByUsername(invalidUsername)).thenReturn(Optional.empty());

@@ -21,12 +21,12 @@ public class UserServiceTest {
     private UserRepository userRepository;
 
     @BeforeEach
-    public void setUp() {
+     void setUp() {
         MockitoAnnotations.openMocks(this);
     }
 
     @Test
-    public void testRegisterUser() {
+     void testRegisterUser() {
         User user = new User("testUser", "testPassword");
         when(userRepository.save(any(User.class))).thenReturn(user);
         String password = "testPassword";
@@ -39,7 +39,7 @@ public class UserServiceTest {
     }
 
     @Test
-    public void testRegisterInvalidUser() {
+     void testRegisterInvalidUser() {
         String password = "";
         String username = "testUser";
 

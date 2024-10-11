@@ -12,14 +12,14 @@ import org.junit.jupiter.api.Test;
 public class WalletTest {
 
     @Test
-    public void testWalletInitialization() {
+     void testWalletInitialization() {
         Wallet wallet = new Wallet();
 
         assertNotNull(wallet);
     }
 
     @Test
-    public void testDifferentWalletInstancesAreNotEqual() {
+     void testDifferentWalletInstancesAreNotEqual() {
         Wallet wallet1 = new Wallet();
         Wallet wallet2 = new Wallet();
 
@@ -27,7 +27,7 @@ public class WalletTest {
     }
 
     @Test
-    public void testDepositPositiveAmount() {
+     void testDepositPositiveAmount() {
         Wallet wallet = new Wallet();
         BigDecimal expected = BigDecimal.valueOf(100);
 
@@ -37,7 +37,7 @@ public class WalletTest {
     }
 
     @Test
-    public void testDepositZeroAmount() {
+     void testDepositZeroAmount() {
         Wallet wallet = new Wallet();
 
         assertThrows(DepositAmountMustBePositiveException.class, () -> {
@@ -46,7 +46,7 @@ public class WalletTest {
     }
 
     @Test
-    public void testDepositNegativeAmount() {
+     void testDepositNegativeAmount() {
         Wallet wallet = new Wallet();
 
         assertThrows(DepositAmountMustBePositiveException.class, () -> {
@@ -55,7 +55,7 @@ public class WalletTest {
     }
 
     @Test
-    public void testWithdrawWithSufficientFunds() {
+     void testWithdrawWithSufficientFunds() {
         Wallet wallet = new Wallet();
         wallet.deposit(BigDecimal.valueOf(100));
         BigDecimal expected = BigDecimal.valueOf(50);
@@ -66,7 +66,7 @@ public class WalletTest {
     }
 
     @Test
-    public void testWithdrawWithInsufficientFunds() {
+     void testWithdrawWithInsufficientFunds() {
         Wallet wallet = new Wallet();
 
         assertThrows(InsufficientFundsException.class, () -> {
@@ -75,7 +75,7 @@ public class WalletTest {
     }
 
     @Test
-    public void testWithdrawZeroAmount() {
+     void testWithdrawZeroAmount() {
         Wallet wallet = new Wallet();
 
         wallet.deposit(BigDecimal.valueOf(100));
@@ -86,7 +86,7 @@ public class WalletTest {
     }
 
     @Test
-    public void testWithdrawNegativeAmount() {
+     void testWithdrawNegativeAmount() {
         Wallet wallet = new Wallet();
 
         wallet.deposit(BigDecimal.valueOf(100));
