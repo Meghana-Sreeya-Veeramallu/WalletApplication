@@ -1,6 +1,8 @@
 package com.example.wallet.controller;
 
+import com.example.wallet.dto.TransactionRequestBody;
 import com.example.wallet.service.WalletService;
+import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -16,18 +18,18 @@ public class WalletController {
     }
 
     @PostMapping("/deposit")
-    public ResponseEntity<?> deposit(@RequestParam String username, @RequestParam Double amount) {
+    public ResponseEntity<?> deposit(@RequestBody @Valid TransactionRequestBody request) {
         try{
-            return ResponseEntity.ok(walletService.deposit(username, amount));
+            return ResponseEntity.ok(walletService.deposit(request.getUsername(), request.getAmount()));
         } catch (Exception e){
             return ResponseEntity.internalServerError().body("An error occurred: "+ e.getMessage());
         }
     }
 
     @PostMapping("/withdraw")
-    public ResponseEntity<?> withdraw(@RequestParam String username, @RequestParam Double amount) {
+    public ResponseEntity<?> withdraw(@RequestBody @Valid TransactionRequestBody request) {
         try{
-            return ResponseEntity.ok(walletService.withdraw(username, amount));
+            return ResponseEntity.ok(walletService.withdraw(request.getUsername(), request.getAmount()));
         } catch (Exception e){
             return ResponseEntity.internalServerError().body("An error occurred: "+ e.getMessage());
         }

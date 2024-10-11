@@ -4,6 +4,7 @@ import com.example.wallet.Exceptions.DepositAmountMustBePositiveException;
 import com.example.wallet.Exceptions.InsufficientFundsException;
 import com.example.wallet.Exceptions.UserNotFoundException;
 import com.example.wallet.Exceptions.WithdrawAmountMustBePositiveException;
+import com.example.wallet.dto.TransactionRequestBody;
 import com.example.wallet.service.WalletService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -35,7 +36,7 @@ class WalletControllerTest {
         Double amount = 100.0;
         when(walletService.deposit(username, amount)).thenReturn(amount);
 
-        ResponseEntity<?> response = walletController.deposit(username, amount);
+        ResponseEntity<?> response = walletController.deposit(new TransactionRequestBody(username, amount));
 
         assertEquals(HttpStatus.OK, response.getStatusCode());
         assertEquals(amount, response.getBody());
@@ -47,7 +48,7 @@ class WalletControllerTest {
         Double amount = 100.0;
         when(walletService.deposit(username, amount)).thenThrow(new UserNotFoundException("User not found"));
 
-        ResponseEntity<?> response = walletController.deposit(username, amount);
+        ResponseEntity<?> response = walletController.deposit(new TransactionRequestBody(username, amount));
 
         assertEquals(HttpStatus.INTERNAL_SERVER_ERROR, response.getStatusCode());
         assertEquals("An error occurred: User not found", response.getBody());
@@ -56,10 +57,10 @@ class WalletControllerTest {
     @Test
     void testDepositWhenDepositAmountIsNegative() {
         String username = "testUser";
-        Double amount = 100.0;
+        Double amount = -100.0;
         when(walletService.deposit(username, amount)).thenThrow(new DepositAmountMustBePositiveException("Deposit amount must be positive"));
 
-        ResponseEntity<?> response = walletController.deposit(username, amount);
+        ResponseEntity<?> response = walletController.deposit(new TransactionRequestBody(username, amount));
 
         assertEquals(HttpStatus.INTERNAL_SERVER_ERROR, response.getStatusCode());
         assertEquals("An error occurred: Deposit amount must be positive", response.getBody());
@@ -71,7 +72,7 @@ class WalletControllerTest {
         Double amount = 100.0;
         when(walletService.withdraw(username, amount)).thenReturn(amount);
 
-        ResponseEntity<?> response = walletController.withdraw(username, amount);
+        ResponseEntity<?> response = walletController.withdraw(new TransactionRequestBody(username, amount));
 
         assertEquals(HttpStatus.OK, response.getStatusCode());
         assertEquals(amount, response.getBody());
@@ -83,19 +84,19 @@ class WalletControllerTest {
         Double amount = 100.0;
         when(walletService.withdraw(username, amount)).thenThrow(new UserNotFoundException("User not found"));
 
-        ResponseEntity<?> response = walletController.withdraw(username, amount);
+        ResponseEntity<?> response = walletController.withdraw(new TransactionRequestBody(username, amount));
 
         assertEquals(HttpStatus.INTERNAL_SERVER_ERROR, response.getStatusCode());
         assertEquals("An error occurred: User not found", response.getBody());
     }
 
     @Test
-    void testDepositWhenWithdrawAmountIsNegative() {
+    void testWithdrawWhenWithdrawAmountIsNegative() {
         String username = "testUser";
         Double amount = -100.0;
         when(walletService.withdraw(username, amount)).thenThrow(new WithdrawAmountMustBePositiveException("Withdraw amount must be positive"));
 
-        ResponseEntity<?> response = walletController.withdraw(username, amount);
+        ResponseEntity<?> response = walletController.withdraw(new TransactionRequestBody(username, amount));
 
         assertEquals(HttpStatus.INTERNAL_SERVER_ERROR, response.getStatusCode());
         assertEquals("An error occurred: Withdraw amount must be positive", response.getBody());
@@ -107,7 +108,7 @@ class WalletControllerTest {
         Double amount = 50.0;
         when(walletService.withdraw(username, amount)).thenThrow(new InsufficientFundsException("Insufficient funds"));
 
-        ResponseEntity<?> response = walletController.withdraw(username, amount);
+        ResponseEntity<?> response = walletController.withdraw(new TransactionRequestBody(username, amount));
 
         assertEquals(HttpStatus.INTERNAL_SERVER_ERROR, response.getStatusCode());
         assertEquals("An error occurred: Insufficient funds", response.getBody());

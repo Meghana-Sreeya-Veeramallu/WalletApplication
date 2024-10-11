@@ -2,6 +2,7 @@ package com.example.wallet.controller;
 
 import com.example.wallet.Exceptions.PasswordCannotBeNullOrEmptyException;
 import com.example.wallet.Exceptions.UsernameCannotBeNullOrEmptyException;
+import com.example.wallet.dto.RegistrationRequestBody;
 import com.example.wallet.model.User;
 import com.example.wallet.service.UserService;
 import org.junit.jupiter.api.BeforeEach;
@@ -32,10 +33,11 @@ class UserControllerTest {
     void testRegisterWhenSuccessful() {
         String username = "testUser";
         String password = "testPassword";
+        RegistrationRequestBody request = new RegistrationRequestBody(username, password);
         User mockUser = new User(username, password);
         when(userService.registerUser(username, password)).thenReturn(mockUser);
 
-        ResponseEntity<?> response = userController.register(username, password);
+        ResponseEntity<?> response = userController.register(request);
 
         assertEquals(HttpStatus.OK, response.getStatusCode());
         assertEquals(mockUser, response.getBody());
@@ -45,9 +47,10 @@ class UserControllerTest {
     void testRegisterWhenUserIsNull() {
         String username = "";
         String password = "testPassword";
+        RegistrationRequestBody request = new RegistrationRequestBody(username, password);
         when(userService.registerUser(username, password)).thenThrow(new UsernameCannotBeNullOrEmptyException("Username cannot be null or empty"));
 
-        ResponseEntity<?> response = userController.register(username, password);
+        ResponseEntity<?> response = userController.register(request);
 
         assertEquals(HttpStatus.INTERNAL_SERVER_ERROR, response.getStatusCode());
         assertEquals("An error occurred: Username cannot be null or empty", response.getBody());
@@ -57,9 +60,10 @@ class UserControllerTest {
     void testRegisterWhenPasswordIsNull() {
         String username = "testUser";
         String password = "";
+        RegistrationRequestBody request = new RegistrationRequestBody(username, password);
         when(userService.registerUser(username, password)).thenThrow(new PasswordCannotBeNullOrEmptyException("Password cannot be null or empty"));
 
-        ResponseEntity<?> response = userController.register(username, password);
+        ResponseEntity<?> response = userController.register(request);
 
         assertEquals(HttpStatus.INTERNAL_SERVER_ERROR, response.getStatusCode());
         assertEquals("An error occurred: Password cannot be null or empty", response.getBody());
