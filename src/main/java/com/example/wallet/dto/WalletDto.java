@@ -7,8 +7,7 @@ import lombok.NoArgsConstructor;
 @Getter
 @AllArgsConstructor
 @NoArgsConstructor
-public class TransactionDto {
-    private String username;
-    private String password;
+public class WalletDto {
+    private Long userId;
     private Double amount;
 }

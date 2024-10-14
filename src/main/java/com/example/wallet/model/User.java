@@ -1,6 +1,5 @@
 package com.example.wallet.model;
 
-import com.example.wallet.Exceptions.CredentialsDoNotMatchException;
 import com.example.wallet.Exceptions.PasswordCannotBeNullOrEmptyException;
 import com.example.wallet.Exceptions.UsernameCannotBeNullOrEmptyException;
 import jakarta.persistence.*;
@@ -15,7 +14,7 @@ public class User {
     private String username;
     private String password;
 
-    @OneToOne(cascade = CascadeType.ALL)
+    @OneToOne(mappedBy = "user", cascade = CascadeType.ALL)
     private Wallet wallet;
 
     public User() {}
@@ -30,19 +29,5 @@ public class User {
         this.username = username;
         this.password = password;
         this.wallet = new Wallet();
-    }
-
-    public Double deposit(Double amount) {
-        return wallet.deposit(amount);
-    }
-
-    public Double withdraw(Double amount) {
-        return wallet.withdraw(amount);
-    }
-
-    public void validateCredentials(String password) {
-        if (!this.password.equals(password)){
-            throw new CredentialsDoNotMatchException("Credentials do not match");
-        }
     }
 }

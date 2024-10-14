@@ -13,6 +13,10 @@ public class Wallet {
     private Long id;
     private Double balance;
 
+    @OneToOne
+    @JoinColumn(name = "user_id", referencedColumnName = "id")
+    private User user;
+
     public Wallet() {
         this.balance = 0.0;
     }

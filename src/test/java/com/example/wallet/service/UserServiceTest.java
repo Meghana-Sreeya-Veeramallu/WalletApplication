@@ -12,8 +12,6 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
 
-import java.util.Optional;
-
 public class UserServiceTest {
     String username;
     String password;
@@ -46,7 +44,7 @@ public class UserServiceTest {
     }
 
     @Test
-     void testRegisterInvalidUser() {
+     void testRegisterInvalidPassword() {
         String password = "";
         String username = "testUser";
 
@@ -55,108 +53,11 @@ public class UserServiceTest {
     }
 
     @Test
-    void testDeposit() {
-        Double depositAmount = 100.0;
-        when(userRepository.findByUsername(username)).thenReturn(Optional.of(user));
+    void testRegisterInvalidUsername() {
+        String password = "testPassword";
+        String username = "";
 
-        Double newBalance = userService.deposit(username, password, depositAmount);
-
-        assertEquals(depositAmount, newBalance);
-        verify(userRepository, times(1)).findByUsername(username);
-    }
-
-    @Test
-    void testDepositCredentialsDoNotMatch() {
-        Double depositAmount = 100.0;
-        String invalidPassword = "invalidPassword";
-        when(userRepository.findByUsername(username)).thenReturn(Optional.of(user));
-
-        assertThrows(CredentialsDoNotMatchException.class, () -> {
-            userService.deposit(username, invalidPassword, depositAmount);
-        });
-        verify(userRepository, times(1)).findByUsername(username);
-    }
-
-    @Test
-    void testDepositNegativeAmount() {
-        Double depositAmount = -100.0;
-        when(userRepository.findByUsername(username)).thenReturn(Optional.of(user));
-
-        assertThrows(DepositAmountMustBePositiveException.class, () -> {
-            userService.deposit(username, password, depositAmount);
-        });
-        verify(userRepository, times(1)).findByUsername(username);
-    }
-
-    @Test
-    void testDepositWithInvalidUser() {
-        String invalidUsername = "invalidUsername";
-        Double depositAmount = 100.0;
-        when(userRepository.findByUsername(invalidUsername)).thenReturn(Optional.empty());
-
-        assertThrows(UserNotFoundException.class, () -> {
-            userService.deposit(invalidUsername, password, depositAmount);
-        });
-        verify(userRepository, times(1)).findByUsername(invalidUsername);
-    }
-
-    @Test
-    void testWithdrawWithSufficientFunds() {
-        Double withdrawAmount = 50.0;
-        when(userRepository.findByUsername(username)).thenReturn(Optional.of(user));
-        userService.deposit(username, password,100.0);
-
-        Double newBalance = userService.withdraw(username, password, withdrawAmount);
-
-        assertEquals(50.0, newBalance);
-        verify(userRepository, times(2)).findByUsername(username);
-    }
-
-    @Test
-    void testWithdrawNegativeAmount() {
-        Double withdrawAmount = -150.0;
-        when(userRepository.findByUsername(username)).thenReturn(Optional.of(user));
-        userService.deposit(username, password,100.0);
-
-        assertThrows(WithdrawAmountMustBePositiveException.class, () -> {
-            userService.withdraw(username, password, withdrawAmount);
-        });
-        verify(userRepository, times(2)).findByUsername(username);
-    }
-
-    @Test
-    void testWithdrawWithInsufficientFunds() {
-        Double withdrawAmount = 150.0;
-        when(userRepository.findByUsername(username)).thenReturn(Optional.of(user));
-        userService.deposit(username, password,100.0);
-
-        assertThrows(InsufficientFundsException.class, () -> {
-            userService.withdraw(username, password, withdrawAmount);
-        });
-        verify(userRepository, times(2)).findByUsername(username);
-    }
-
-    @Test
-    void testWithdrawWithInvalidUser() {
-        String invalidUsername = "invalidUsername";
-        Double withdrawAmount = 50.0;
-        when(userRepository.findByUsername(invalidUsername)).thenReturn(Optional.empty());
-
-        assertThrows(UserNotFoundException.class, () -> {
-            userService.withdraw(invalidUsername, password, withdrawAmount);
-        });
-        verify(userRepository, times(1)).findByUsername(invalidUsername);
-    }
-
-    @Test
-    void testWithdrawWithInvalidCredentials() {
-        String invalidPassword = "invalidPassword";
-        Double withdrawAmount = 50.0;
-        when(userRepository.findByUsername(username)).thenReturn(Optional.of(user));
-
-        assertThrows(CredentialsDoNotMatchException.class, () -> {
-            userService.withdraw(username, invalidPassword, withdrawAmount);
-        });
-        verify(userRepository, times(1)).findByUsername(username);
+        assertThrows(UsernameCannotBeNullOrEmptyException.class , () ->userService.registerUser(username, password));
+        verify(userRepository, times(0)).save(any(User.class));
     }
 }
