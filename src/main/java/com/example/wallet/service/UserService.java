@@ -22,14 +22,16 @@ public class UserService {
     }
 
     @Transactional
-    public Double deposit(String username, Double amount) {
+    public Double deposit(String username, String password, Double amount) {
         User user = userRepository.findByUsername(username).orElseThrow(() -> new UserNotFoundException("User not found"));
+        user.validateCredentials(password);
         return user.deposit(amount);
     }
 
     @Transactional
-    public Double withdraw(String username, Double amount) {
+    public Double withdraw(String username, String password, Double amount) {
         User user = userRepository.findByUsername(username).orElseThrow(() -> new UserNotFoundException("User not found"));
+        user.validateCredentials(password);
         return user.withdraw(amount);
     }
 }

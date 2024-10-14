@@ -36,11 +36,11 @@ public class UserController {
     @PostMapping("/deposit")
     public ResponseEntity<?> deposit(@RequestBody @Valid TransactionDto request) {
         try {
-            Double amount = userService.deposit(request.getUsername(), request.getAmount());
+            Double amount = userService.deposit(request.getUsername(), request.getPassword(), request.getAmount());
             return ResponseEntity.ok(amount);
         } catch (UserNotFoundException e) {
             return ResponseEntity.status(HttpStatus.NOT_FOUND).body("User not found");
-        } catch (DepositAmountMustBePositiveException e) {
+        } catch (DepositAmountMustBePositiveException | CredentialsDoNotMatchException e) {
             return ResponseEntity.badRequest().body("Bad request: " + e.getMessage());
         } catch (Exception e) {
             return ResponseEntity.internalServerError().body("An error occurred: " + e.getMessage());
@@ -50,11 +50,11 @@ public class UserController {
     @PostMapping("/withdraw")
     public ResponseEntity<?> withdraw(@RequestBody @Valid TransactionDto request) {
         try {
-            Double amount = userService.withdraw(request.getUsername(), request.getAmount());
+            Double amount = userService.withdraw(request.getUsername(), request.getPassword(), request.getAmount());
             return ResponseEntity.ok(amount);
         } catch (UserNotFoundException e) {
             return ResponseEntity.status(HttpStatus.NOT_FOUND).body("User not found");
-        } catch (WithdrawAmountMustBePositiveException | InsufficientFundsException e) {
+        } catch (WithdrawAmountMustBePositiveException | InsufficientFundsException | CredentialsDoNotMatchException e) {
             return ResponseEntity.badRequest().body("Bad request: " + e.getMessage());
         } catch (Exception e) {
             return ResponseEntity.internalServerError().body("An error occurred: " + e.getMessage());

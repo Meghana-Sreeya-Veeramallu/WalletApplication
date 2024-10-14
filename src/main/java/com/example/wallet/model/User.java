@@ -1,5 +1,6 @@
 package com.example.wallet.model;
 
+import com.example.wallet.Exceptions.CredentialsDoNotMatchException;
 import com.example.wallet.Exceptions.PasswordCannotBeNullOrEmptyException;
 import com.example.wallet.Exceptions.UsernameCannotBeNullOrEmptyException;
 import jakarta.persistence.*;
@@ -37,5 +38,11 @@ public class User {
 
     public Double withdraw(Double amount) {
         return wallet.withdraw(amount);
+    }
+
+    public void validateCredentials(String password) {
+        if (!this.password.equals(password)){
+            throw new CredentialsDoNotMatchException("Credentials do not match");
+        }
     }
 }

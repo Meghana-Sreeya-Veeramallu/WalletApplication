@@ -102,11 +102,12 @@ class UserControllerTest {
     @Test
     void testDepositWhenSuccessful() throws Exception {
         String username = "testUser";
+        String password = "testPassword";
         Double amount = 100.0;
-        TransactionDto requestBody = new TransactionDto(username, amount);
+        TransactionDto requestBody = new TransactionDto(username, password, amount);
         String jsonRequestBody = objectMapper.writeValueAsString(requestBody);
 
-        when(userService.deposit(username, amount)).thenReturn(amount);
+        when(userService.deposit(username, password, amount)).thenReturn(amount);
 
         MvcResult mvcResult = mockMvc.perform(MockMvcRequestBuilders.post("/users/deposit")
                         .contentType(MediaType.APPLICATION_JSON)
@@ -117,17 +118,18 @@ class UserControllerTest {
         Double responseBody = objectMapper.readValue(mvcResult.getResponse().getContentAsString(), Double.class);
         assertEquals(amount, responseBody);
 
-        verify(userService, times(1)).deposit(username, amount);
+        verify(userService, times(1)).deposit(username, password, amount);
     }
 
     @Test
     void testDepositWhenUserNotFoundException() throws Exception {
         String username = "invalidUser";
+        String password = "testPassword";
         Double amount = 100.0;
-        TransactionDto requestBody = new TransactionDto(username, amount);
+        TransactionDto requestBody = new TransactionDto(username, password, amount);
         String jsonRequestBody = objectMapper.writeValueAsString(requestBody);
 
-        when(userService.deposit(username, amount)).thenThrow(new UserNotFoundException("User not found"));
+        when(userService.deposit(username, password, amount)).thenThrow(new UserNotFoundException("User not found"));
 
         mockMvc.perform(MockMvcRequestBuilders.post("/users/deposit")
                         .contentType(MediaType.APPLICATION_JSON)
@@ -135,17 +137,37 @@ class UserControllerTest {
                 .andExpect(status().isNotFound())
                 .andExpect(content().string("User not found"));
 
-        verify(userService, times(1)).deposit(username, amount);
+        verify(userService, times(1)).deposit(username, password,amount);
+    }
+
+    @Test
+    void testDepositWhenCredentialsDoNotMatch() throws Exception {
+        String username = "testUser";
+        String password = "invalidPassword";
+        Double amount = 100.0;
+        TransactionDto requestBody = new TransactionDto(username, password, amount);
+        String jsonRequestBody = objectMapper.writeValueAsString(requestBody);
+
+        when(userService.deposit(username, password, amount)).thenThrow(new CredentialsDoNotMatchException("Credentials do not match"));
+
+        mockMvc.perform(MockMvcRequestBuilders.post("/users/deposit")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(jsonRequestBody))
+                .andExpect(status().isBadRequest())
+                .andExpect(content().string("Bad request: Credentials do not match"));
+
+        verify(userService, times(1)).deposit(username, password,amount);
     }
 
     @Test
     void testDepositWhenDepositAmountIsNegative() throws Exception {
         String username = "testUser";
+        String password = "testPassword";
         Double amount = -100.0;
-        TransactionDto requestBody = new TransactionDto(username, amount);
+        TransactionDto requestBody = new TransactionDto(username, password, amount);
         String jsonRequestBody = objectMapper.writeValueAsString(requestBody);
 
-        when(userService.deposit(username, amount)).thenThrow(new DepositAmountMustBePositiveException("Deposit amount must be positive"));
+        when(userService.deposit(username, password, amount)).thenThrow(new DepositAmountMustBePositiveException("Deposit amount must be positive"));
 
         mockMvc.perform(MockMvcRequestBuilders.post("/users/deposit")
                         .contentType(MediaType.APPLICATION_JSON)
@@ -153,17 +175,18 @@ class UserControllerTest {
                 .andExpect(status().isBadRequest())
                 .andExpect(content().string("Bad request: Deposit amount must be positive"));
 
-        verify(userService, times(1)).deposit(username, amount);
+        verify(userService, times(1)).deposit(username, password, amount);
     }
 
     @Test
     void testWithdrawWhenSuccessful() throws Exception {
         String username = "testUser";
+        String password = "testPassword";
         Double amount = 100.0;
-        TransactionDto requestBody = new TransactionDto(username, amount);
+        TransactionDto requestBody = new TransactionDto(username, password, amount);
         String jsonRequestBody = objectMapper.writeValueAsString(requestBody);
 
-        when(userService.withdraw(username, amount)).thenReturn(amount);
+        when(userService.withdraw(username, password, amount)).thenReturn(amount);
 
         MvcResult mvcResult = mockMvc.perform(MockMvcRequestBuilders.post("/users/withdraw")
                         .contentType(MediaType.APPLICATION_JSON)
@@ -174,17 +197,18 @@ class UserControllerTest {
         Double responseBody = objectMapper.readValue(mvcResult.getResponse().getContentAsString(), Double.class);
         assertEquals(amount, responseBody);
 
-        verify(userService, times(1)).withdraw(username, amount);
+        verify(userService, times(1)).withdraw(username, password, amount);
     }
 
     @Test
     void testWithdrawWhenUserNotFoundException() throws Exception {
         String username = "invalidUser";
+        String password = "testPassword";
         Double amount = 100.0;
-        TransactionDto requestBody = new TransactionDto(username, amount);
+        TransactionDto requestBody = new TransactionDto(username, password, amount);
         String jsonRequestBody = objectMapper.writeValueAsString(requestBody);
 
-        when(userService.withdraw(username, amount)).thenThrow(new UserNotFoundException("User not found"));
+        when(userService.withdraw(username, password, amount)).thenThrow(new UserNotFoundException("User not found"));
 
         mockMvc.perform(MockMvcRequestBuilders.post("/users/withdraw")
                         .contentType(MediaType.APPLICATION_JSON)
@@ -192,17 +216,37 @@ class UserControllerTest {
                 .andExpect(status().isNotFound())
                 .andExpect(content().string("User not found"));
 
-        verify(userService, times(1)).withdraw(username, amount);
+        verify(userService, times(1)).withdraw(username, password, amount);
+    }
+
+    @Test
+    void testWithdrawWhenCredentialsDoNotMatch() throws Exception {
+        String username = "testUser";
+        String password = "invalidPassword";
+        Double amount = 100.0;
+        TransactionDto requestBody = new TransactionDto(username, password, amount);
+        String jsonRequestBody = objectMapper.writeValueAsString(requestBody);
+
+        when(userService.withdraw(username, password, amount)).thenThrow(new CredentialsDoNotMatchException("Credentials do not match"));
+
+        mockMvc.perform(MockMvcRequestBuilders.post("/users/withdraw")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(jsonRequestBody))
+                .andExpect(status().isBadRequest())
+                .andExpect(content().string("Bad request: Credentials do not match"));
+
+        verify(userService, times(1)).withdraw(username, password,amount);
     }
 
     @Test
     void testWithdrawWhenWithdrawAmountIsNegative() throws Exception {
         String username = "testUser";
+        String password = "testPassword";
         Double amount = -100.0;
-        TransactionDto requestBody = new TransactionDto(username, amount);
+        TransactionDto requestBody = new TransactionDto(username, password, amount);
         String jsonRequestBody = objectMapper.writeValueAsString(requestBody);
 
-        when(userService.withdraw(username, amount)).thenThrow(new WithdrawAmountMustBePositiveException("Withdraw amount must be positive"));
+        when(userService.withdraw(username, password, amount)).thenThrow(new WithdrawAmountMustBePositiveException("Withdraw amount must be positive"));
 
         mockMvc.perform(MockMvcRequestBuilders.post("/users/withdraw")
                         .contentType(MediaType.APPLICATION_JSON)
@@ -210,17 +254,18 @@ class UserControllerTest {
                 .andExpect(status().isBadRequest())
                 .andExpect(content().string("Bad request: Withdraw amount must be positive"));
 
-        verify(userService, times(1)).withdraw(username, amount);
+        verify(userService, times(1)).withdraw(username, password, amount);
     }
 
     @Test
     void testWithdrawWhenInsufficientFundsException() throws Exception {
         String username = "testUser";
+        String password = "testPassword";
         Double amount = 50.0;
-        TransactionDto requestBody = new TransactionDto(username, amount);
+        TransactionDto requestBody = new TransactionDto(username, password, amount);
         String jsonRequestBody = objectMapper.writeValueAsString(requestBody);
 
-        when(userService.withdraw(username, amount)).thenThrow(new InsufficientFundsException("Insufficient funds"));
+        when(userService.withdraw(username, password, amount)).thenThrow(new InsufficientFundsException("Insufficient funds"));
 
         mockMvc.perform(MockMvcRequestBuilders.post("/users/withdraw")
                         .contentType(MediaType.APPLICATION_JSON)
@@ -228,6 +273,6 @@ class UserControllerTest {
                 .andExpect(status().isBadRequest())
                 .andExpect(content().string("Bad request: Insufficient funds"));
 
-        verify(userService, times(1)).withdraw(username, amount);
+        verify(userService, times(1)).withdraw(username, password, amount);
     }
 }

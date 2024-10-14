@@ -9,5 +9,6 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 public class TransactionDto {
     private String username;
+    private String password;
     private Double amount;
 }
