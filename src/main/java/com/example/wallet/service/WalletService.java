@@ -27,4 +27,14 @@ public class WalletService {
         Wallet wallet = walletRepository.findByUserId(userId).orElseThrow(() -> new UserNotFoundException("User not found"));;
         return wallet.withdraw(amount);
     }
+
+    @Transactional
+    public Double transfer(Long senderId, Long recipientId, Double amount) {
+        Wallet senderWallet = walletRepository.findByUserId(senderId)
+                .orElseThrow(() -> new UserNotFoundException("Sender not found"));
+        Wallet recipientWallet = walletRepository.findByUserId(recipientId)
+                .orElseThrow(() -> new UserNotFoundException("Recipient not found"));
+
+        return senderWallet.transfer(recipientWallet, amount);
+    }
 }

@@ -2,6 +2,7 @@ package com.example.wallet.model;
 
 import com.example.wallet.Exceptions.DepositAmountMustBePositiveException;
 import com.example.wallet.Exceptions.InsufficientFundsException;
+import com.example.wallet.Exceptions.TransferAmountMustBePositiveException;
 import com.example.wallet.Exceptions.WithdrawAmountMustBePositiveException;
 import jakarta.persistence.*;
 
@@ -37,6 +38,20 @@ public class Wallet {
             throw new InsufficientFundsException("Insufficient funds");
         }
         this.balance -= amount;
+        return this.balance;
+    }
+
+    public Double transfer(Wallet recipientWallet, Double amount) {
+        if (amount <= 0) {
+            throw new TransferAmountMustBePositiveException("Transfer amount must be positive");
+        }
+        if (this.balance < amount) {
+            throw new InsufficientFundsException("Insufficient funds for transfer");
+        }
+
+        this.balance -= amount;
+        recipientWallet.balance += amount;
+
         return this.balance;
     }
 }

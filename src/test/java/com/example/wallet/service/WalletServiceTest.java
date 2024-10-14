@@ -112,4 +112,104 @@ public class WalletServiceTest {
         );
         verify(walletRepository, times(1)).findByUserId(invalidUserId);
     }
+
+    @Test
+    void testTransferSuccessful() {
+        Long senderId = 1L;
+        Long recipientId = 2L;
+        Double transferAmount = 30.0;
+        Wallet senderWallet = new Wallet();
+        Wallet recipientWallet = new Wallet();
+
+        when(walletRepository.findByUserId(senderId)).thenReturn(Optional.of(senderWallet));
+        when(walletRepository.findByUserId(recipientId)).thenReturn(Optional.of(recipientWallet));
+
+        walletService.deposit(senderId, 100.0);
+        Double newBalance = walletService.transfer(senderId, recipientId, transferAmount);
+
+        assertEquals(70.0, newBalance);
+        verify(walletRepository, times(2)).findByUserId(senderId);
+        verify(walletRepository, times(1)).findByUserId(recipientId);
+    }
+
+    @Test
+    void testTransferUserNotFoundForSender() {
+        Long invalidSenderId = 1L;
+        Long recipientId = 2L;
+        Double transferAmount = 30.0;
+        Wallet recipientWallet = new Wallet();
+
+        when(walletRepository.findByUserId(invalidSenderId)).thenReturn(Optional.empty());
+        when(walletRepository.findByUserId(recipientId)).thenReturn(Optional.of(recipientWallet));
+
+        Exception exception = assertThrows(UserNotFoundException.class, () -> {
+            walletService.transfer(invalidSenderId, recipientId, transferAmount);
+        });
+
+        assertEquals("Sender not found", exception.getMessage());
+        verify(walletRepository, times(1)).findByUserId(invalidSenderId);
+        verify(walletRepository, times(0)).findByUserId(recipientId);
+    }
+
+    @Test
+    void testTransferUserNotFoundForRecipient() {
+        Long senderId = 1L;
+        Long invalidRecipientId = 2L;
+        Double transferAmount = 30.0;
+        Wallet senderWallet = new Wallet();
+
+        when(walletRepository.findByUserId(senderId)).thenReturn(java.util.Optional.of(senderWallet));
+        when(walletRepository.findByUserId(invalidRecipientId)).thenReturn(java.util.Optional.empty());
+
+        walletService.deposit(senderId, 100.0);
+        Exception exception = assertThrows(UserNotFoundException.class, () -> {
+            walletService.transfer(senderId, invalidRecipientId, transferAmount);
+        });
+
+        assertEquals("Recipient not found", exception.getMessage());
+        verify(walletRepository, times(2)).findByUserId(senderId);
+        verify(walletRepository, times(1)).findByUserId(invalidRecipientId);
+    }
+
+    @Test
+    void testTransferInsufficientFunds() {
+        Long senderId = 1L;
+        Long recipientId = 2L;
+        Double transferAmount = 130.0;
+        Wallet senderWallet = new Wallet();
+        Wallet recipientWallet = new Wallet();
+
+        when(walletRepository.findByUserId(senderId)).thenReturn(java.util.Optional.of(senderWallet));
+        when(walletRepository.findByUserId(recipientId)).thenReturn(java.util.Optional.of(recipientWallet));
+
+        walletService.deposit(senderId, 100.0);
+        Exception exception = assertThrows(InsufficientFundsException.class, () -> {
+            walletService.transfer(senderId, recipientId, transferAmount);
+        });
+
+        assertEquals("Insufficient funds for transfer", exception.getMessage());
+        verify(walletRepository, times(2)).findByUserId(senderId);
+        verify(walletRepository, times(1)).findByUserId(recipientId);
+    }
+
+    @Test
+    void testTransferAmountMustBePositive() {
+        Long senderId = 1L;
+        Long recipientId = 2L;
+        Double transferAmount = -10.0;
+        Wallet senderWallet = new Wallet();
+        Wallet recipientWallet = new Wallet();
+
+        when(walletRepository.findByUserId(senderId)).thenReturn(java.util.Optional.of(senderWallet));
+        when(walletRepository.findByUserId(recipientId)).thenReturn(java.util.Optional.of(recipientWallet));
+
+        walletService.deposit(senderId, 100.0);
+        Exception exception = assertThrows(TransferAmountMustBePositiveException.class, () -> {
+            walletService.transfer(senderId, recipientId, transferAmount);
+        });
+
+        assertEquals("Transfer amount must be positive", exception.getMessage());
+        verify(walletRepository, times(2)).findByUserId(senderId);
+        verify(walletRepository, times(1)).findByUserId(recipientId);
+    }
 }

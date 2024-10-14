@@ -4,6 +4,7 @@ import static org.junit.jupiter.api.Assertions.*;
 
 import com.example.wallet.Exceptions.DepositAmountMustBePositiveException;
 import com.example.wallet.Exceptions.InsufficientFundsException;
+import com.example.wallet.Exceptions.TransferAmountMustBePositiveException;
 import com.example.wallet.Exceptions.WithdrawAmountMustBePositiveException;
 import org.junit.jupiter.api.Test;
 
@@ -92,5 +93,59 @@ public class WalletTest {
         assertThrows(WithdrawAmountMustBePositiveException.class, () -> {
             wallet.withdraw(-50.0);
         });
+    }
+
+    @Test
+    void testSuccessfulTransfer() {
+        Wallet senderWallet = new Wallet();
+        Wallet recipientWallet = new Wallet();
+        Double amount = 30.0;
+
+        senderWallet.deposit(100.0);
+        Double newBalance = senderWallet.transfer(recipientWallet, amount);
+
+        assertEquals(70.0, newBalance);
+    }
+
+    @Test
+    void testTransferWhenAmountIsNegative() {
+        Wallet senderWallet = new Wallet();
+        Wallet recipientWallet = new Wallet();
+        Double amount = -10.0;
+
+        senderWallet.deposit(100.0);
+
+        Exception exception = assertThrows(TransferAmountMustBePositiveException.class, () -> {
+            senderWallet.transfer(recipientWallet, amount);
+        });
+        assertEquals("Transfer amount must be positive", exception.getMessage());
+    }
+
+    @Test
+    void testTransferWhenInsufficientFunds() {
+        Wallet senderWallet = new Wallet();
+        Wallet recipientWallet = new Wallet();
+        Double amount = 150.0;
+
+        senderWallet.deposit(100.0);
+
+        Exception exception = assertThrows(InsufficientFundsException.class, () -> {
+            senderWallet.transfer(recipientWallet, amount);
+        });
+        assertEquals("Insufficient funds for transfer", exception.getMessage());
+    }
+
+    @Test
+    void testTransferZeroAmount() {
+        Wallet senderWallet = new Wallet();
+        Wallet recipientWallet = new Wallet();
+        Double amount = 0.0;
+
+        senderWallet.deposit(100.0);
+
+        Exception exception = assertThrows(TransferAmountMustBePositiveException.class, () -> {
+            senderWallet.transfer(recipientWallet, amount);
+        });
+        assertEquals("Transfer amount must be positive", exception.getMessage());
     }
 }
