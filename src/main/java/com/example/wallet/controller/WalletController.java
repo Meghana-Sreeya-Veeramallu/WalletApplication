@@ -1,7 +1,9 @@
 package com.example.wallet.controller;
 
 import com.example.wallet.Exceptions.*;
+import com.example.wallet.dto.TransferDto;
 import com.example.wallet.dto.WalletDto;
+import com.example.wallet.model.Transaction;
 import com.example.wallet.service.WalletService;
 import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -9,8 +11,10 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.List;
+
 @RestController
-@RequestMapping("/wallets/")
+@RequestMapping("/wallets")
 public class WalletController {
     private final WalletService walletService;
 
@@ -47,17 +51,28 @@ public class WalletController {
         }
     }
 
-    @PostMapping("/{senderId}/transfer/{recipientId}")
+    @PostMapping("/{senderId}/transfer")
     public ResponseEntity<?> transfer(@PathVariable Long senderId,
-                                      @PathVariable Long recipientId,
-                                      @RequestBody @Valid WalletDto request) {
+                                      @RequestBody @Valid TransferDto request) {
         try {
-            Double newBalance = walletService.transfer(senderId, recipientId, request.getAmount());
+            Double newBalance = walletService.transfer(senderId, request.getRecipientId(), request.getAmount());
             return ResponseEntity.ok(newBalance);
         } catch (UserNotFoundException e) {
             return ResponseEntity.status(HttpStatus.NOT_FOUND).body("User not found");
         } catch (TransferAmountMustBePositiveException | InsufficientFundsException e) {
             return ResponseEntity.badRequest().body("Bad request: " + e.getMessage());
+        } catch (Exception e) {
+            return ResponseEntity.internalServerError().body("An error occurred: " + e.getMessage());
+        }
+    }
+
+    @GetMapping("/{userId}/transactions")
+    public ResponseEntity<?> getTransactionHistory(@PathVariable Long userId) {
+        try {
+            List<Transaction> transactions = walletService.getTransactionHistory(userId);
+            return ResponseEntity.ok(transactions);
+        } catch (UserNotFoundException e) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body("User not found");
         } catch (Exception e) {
             return ResponseEntity.internalServerError().body("An error occurred: " + e.getMessage());
         }

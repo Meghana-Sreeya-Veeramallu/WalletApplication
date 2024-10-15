@@ -1,8 +1,11 @@
 package com.example.wallet.controller;
 
 import com.example.wallet.Exceptions.*;
+import com.example.wallet.dto.TransferDto;
 import com.example.wallet.dto.WalletDto;
+import com.example.wallet.model.Transaction;
 import com.example.wallet.service.WalletService;
+import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -14,6 +17,8 @@ import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.MvcResult;
 import org.springframework.test.web.servlet.request.MockMvcRequestBuilders;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
+
+import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.Mockito.*;
@@ -175,12 +180,12 @@ class WalletControllerTest {
         Long senderId = 1L;
         Long recipientId = 2L;
         Double amount = 30.0;
-        WalletDto requestBody = new WalletDto(senderId, amount);
+        TransferDto requestBody = new TransferDto(senderId, recipientId, amount);
         String jsonRequestBody = objectMapper.writeValueAsString(requestBody);
 
         when(walletService.transfer(senderId, recipientId, amount)).thenReturn(70.0);
 
-        MvcResult mvcResult = mockMvc.perform(MockMvcRequestBuilders.post("/wallets/{senderId}/transfer/{recipientId}", senderId, recipientId)
+        MvcResult mvcResult = mockMvc.perform(MockMvcRequestBuilders.post("/wallets/{senderId}/transfer", senderId, recipientId)
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(jsonRequestBody))
                 .andExpect(status().isOk())
@@ -197,12 +202,12 @@ class WalletControllerTest {
         Long senderId = 1L;
         Long recipientId = 2L;
         Double amount = 30.0;
-        WalletDto requestBody = new WalletDto(senderId, amount);
+        TransferDto requestBody = new TransferDto(senderId, recipientId, amount);
         String jsonRequestBody = objectMapper.writeValueAsString(requestBody);
 
         when(walletService.transfer(senderId, recipientId, amount)).thenThrow(new UserNotFoundException("Sender not found"));
 
-        mockMvc.perform(MockMvcRequestBuilders.post("/wallets/{senderId}/transfer/{recipientId}", senderId, recipientId)
+        mockMvc.perform(MockMvcRequestBuilders.post("/wallets/{senderId}/transfer", senderId, recipientId)
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(jsonRequestBody))
                 .andExpect(status().isNotFound())
@@ -216,12 +221,12 @@ class WalletControllerTest {
         Long senderId = 1L;
         Long recipientId = 2L;
         Double amount = 30.0;
-        WalletDto requestBody = new WalletDto(senderId, amount);
+        TransferDto requestBody = new TransferDto(senderId, recipientId, amount);
         String jsonRequestBody = objectMapper.writeValueAsString(requestBody);
 
         when(walletService.transfer(senderId, recipientId, amount)).thenThrow(new UserNotFoundException("Recipient not found"));
 
-        mockMvc.perform(MockMvcRequestBuilders.post("/wallets/{senderId}/transfer/{recipientId}", senderId, recipientId)
+        mockMvc.perform(MockMvcRequestBuilders.post("/wallets/{senderId}/transfer", senderId, recipientId)
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(jsonRequestBody))
                 .andExpect(status().isNotFound())
@@ -235,12 +240,12 @@ class WalletControllerTest {
         Long senderId = 1L;
         Long recipientId = 2L;
         Double amount = 50.0;
-        WalletDto requestBody = new WalletDto(senderId, amount);
+        TransferDto requestBody = new TransferDto(senderId, recipientId, amount);
         String jsonRequestBody = objectMapper.writeValueAsString(requestBody);
 
         when(walletService.transfer(senderId, recipientId, amount)).thenThrow(new InsufficientFundsException("Insufficient funds"));
 
-        mockMvc.perform(MockMvcRequestBuilders.post("/wallets/{senderId}/transfer/{recipientId}", senderId, recipientId)
+        mockMvc.perform(MockMvcRequestBuilders.post("/wallets/{senderId}/transfer", senderId, recipientId)
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(jsonRequestBody))
                 .andExpect(status().isBadRequest())
@@ -254,17 +259,60 @@ class WalletControllerTest {
         Long senderId = 1L;
         Long recipientId = 2L;
         Double amount = -30.0;
-        WalletDto requestBody = new WalletDto(senderId, amount);
+        TransferDto requestBody = new TransferDto(senderId, recipientId, amount);
         String jsonRequestBody = objectMapper.writeValueAsString(requestBody);
 
         when(walletService.transfer(senderId, recipientId, amount)).thenThrow(new TransferAmountMustBePositiveException("Transfer amount must be positive"));
 
-        mockMvc.perform(MockMvcRequestBuilders.post("/wallets/{senderId}/transfer/{recipientId}", senderId, recipientId)
+        mockMvc.perform(MockMvcRequestBuilders.post("/wallets/{senderId}/transfer", senderId, recipientId)
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(jsonRequestBody))
                 .andExpect(status().isBadRequest())
                 .andExpect(content().string("Bad request: Transfer amount must be positive"));
 
         verify(walletService, times(1)).transfer(senderId, recipientId, amount);
+    }
+
+    @Test
+    void testGetTransactionHistoryWhenSuccessful() throws Exception {
+        Long userId = 1L;
+        List<Transaction> transactions = List.of(new Transaction(), new Transaction());
+
+        when(walletService.getTransactionHistory(userId)).thenReturn(transactions);
+
+        MvcResult mvcResult = mockMvc.perform(MockMvcRequestBuilders.get("/wallets/{userId}/transactions", userId))
+                .andExpect(status().isOk())
+                .andReturn();
+
+        List<Transaction> responseBody = objectMapper.readValue(mvcResult.getResponse().getContentAsString(), new TypeReference<List<Transaction>>() {});
+        assertEquals(transactions.size(), responseBody.size());
+
+        verify(walletService, times(1)).getTransactionHistory(userId);
+    }
+
+    @Test
+    void testGetTransactionHistoryWhenUserNotFoundException() throws Exception {
+        Long userId = 1L;
+
+        when(walletService.getTransactionHistory(userId)).thenThrow(new UserNotFoundException("User not found"));
+
+        mockMvc.perform(MockMvcRequestBuilders.get("/wallets/{userId}/transactions", userId))
+                .andExpect(status().isNotFound())
+                .andExpect(content().string("User not found"));
+
+        verify(walletService, times(1)).getTransactionHistory(userId);
+    }
+
+    @Test
+    void testGetTransactionHistoryWhenOtherException() throws Exception {
+        Long userId = 1L;
+
+        when(walletService.getTransactionHistory(userId)).thenThrow(new RuntimeException("Unexpected error"));
+
+        mockMvc.perform(MockMvcRequestBuilders.get("/wallets/{userId}/transactions", userId))
+                .andExpect(status().isInternalServerError())
+                .andExpect(content().string("An error occurred: Unexpected error"));
+
+        verify(walletService, times(1)).getTransactionHistory(userId);
     }
 }

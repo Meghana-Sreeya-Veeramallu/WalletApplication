@@ -4,7 +4,9 @@ import static org.mockito.Mockito.*;
 import static org.junit.jupiter.api.Assertions.*;
 
 import com.example.wallet.Exceptions.*;
+import com.example.wallet.model.Transaction;
 import com.example.wallet.model.Wallet;
+import com.example.wallet.repository.TransactionRepository;
 import com.example.wallet.repository.WalletRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -12,6 +14,9 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
 
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.List;
 import java.util.Optional;
 
 public class WalletServiceTest {
@@ -23,6 +28,8 @@ public class WalletServiceTest {
 
     @Mock
     private WalletRepository walletRepository;
+    @Mock
+    private TransactionRepository transactionRepository;
 
     @BeforeEach
     void setUp() {
@@ -40,6 +47,7 @@ public class WalletServiceTest {
 
         assertEquals(depositAmount, newBalance);
         verify(walletRepository, times(1)).findByUserId(userId);
+        verify(transactionRepository, times(1)).save(any(Transaction.class));
     }
 
     @Test
@@ -51,6 +59,7 @@ public class WalletServiceTest {
                 walletService.deposit(userId, depositAmount)
         );
         verify(walletRepository, times(1)).findByUserId(userId);
+        verify(transactionRepository, times(0)).save(any(Transaction.class));
     }
 
     @Test
@@ -63,6 +72,7 @@ public class WalletServiceTest {
             walletService.deposit(invalidUserId, depositAmount)
         );
         verify(walletRepository, times(1)).findByUserId(invalidUserId);
+        verify(transactionRepository, times(0)).save(any(Transaction.class));
     }
 
     @Test
@@ -75,6 +85,7 @@ public class WalletServiceTest {
 
         assertEquals(50.0, newBalance);
         verify(walletRepository, times(2)).findByUserId(userId);
+        verify(transactionRepository, times(2)).save(any(Transaction.class));
     }
 
     @Test
@@ -87,6 +98,7 @@ public class WalletServiceTest {
             walletService.withdraw(userId, withdrawAmount)
         );
         verify(walletRepository, times(2)).findByUserId(userId);
+        verify(transactionRepository, times(1)).save(any(Transaction.class));
     }
 
     @Test
@@ -99,6 +111,7 @@ public class WalletServiceTest {
             walletService.withdraw(userId, withdrawAmount)
         );
         verify(walletRepository, times(2)).findByUserId(userId);
+        verify(transactionRepository, times(1)).save(any(Transaction.class));
     }
 
     @Test
@@ -111,6 +124,7 @@ public class WalletServiceTest {
             walletService.withdraw(invalidUserId, withdrawAmount)
         );
         verify(walletRepository, times(1)).findByUserId(invalidUserId);
+        verify(transactionRepository, times(0)).save(any(Transaction.class));
     }
 
     @Test
@@ -130,6 +144,7 @@ public class WalletServiceTest {
         assertEquals(70.0, newBalance);
         verify(walletRepository, times(2)).findByUserId(senderId);
         verify(walletRepository, times(1)).findByUserId(recipientId);
+        verify(transactionRepository, times(3)).save(any(Transaction.class));
     }
 
     @Test
@@ -149,6 +164,7 @@ public class WalletServiceTest {
         assertEquals("Sender not found", exception.getMessage());
         verify(walletRepository, times(1)).findByUserId(invalidSenderId);
         verify(walletRepository, times(0)).findByUserId(recipientId);
+        verify(transactionRepository, times(0)).save(any(Transaction.class));
     }
 
     @Test
@@ -169,6 +185,7 @@ public class WalletServiceTest {
         assertEquals("Recipient not found", exception.getMessage());
         verify(walletRepository, times(2)).findByUserId(senderId);
         verify(walletRepository, times(1)).findByUserId(invalidRecipientId);
+        verify(transactionRepository, times(1)).save(any(Transaction.class));
     }
 
     @Test
@@ -190,6 +207,7 @@ public class WalletServiceTest {
         assertEquals("Insufficient funds for transfer", exception.getMessage());
         verify(walletRepository, times(2)).findByUserId(senderId);
         verify(walletRepository, times(1)).findByUserId(recipientId);
+        verify(transactionRepository, times(1)).save(any(Transaction.class));
     }
 
     @Test
@@ -211,5 +229,53 @@ public class WalletServiceTest {
         assertEquals("Transfer amount must be positive", exception.getMessage());
         verify(walletRepository, times(2)).findByUserId(senderId);
         verify(walletRepository, times(1)).findByUserId(recipientId);
+        verify(transactionRepository, times(1)).save(any(Transaction.class));
+    }
+
+    @Test
+    void testGetTransactionHistoryWhenUserNotFound() {
+        Long userId = 1L;
+
+        when(walletRepository.findIdByUserId(userId)).thenReturn(Optional.empty());
+
+        assertThrows(UserNotFoundException.class, () -> {
+            walletService.getTransactionHistory(userId);
+        });
+
+        verify(walletRepository, times(1)).findIdByUserId(userId);
+        verifyNoInteractions(transactionRepository);
+    }
+
+    @Test
+    void testGetTransactionHistorySuccess() {
+        Long userId = 1L;
+        Long walletId = 2L;
+        Transaction transaction1 = new Transaction();
+        Transaction transaction2 = new Transaction();
+
+        when(walletRepository.findIdByUserId(userId)).thenReturn(Optional.of(walletId));
+        when(transactionRepository.findByWalletId(walletId)).thenReturn(Arrays.asList(transaction1, transaction2));
+
+        List<Transaction> transactions = walletService.getTransactionHistory(userId);
+
+        assertEquals(2, transactions.size());
+        assertEquals(Arrays.asList(transaction1, transaction2), transactions);
+        verify(walletRepository, times(1)).findIdByUserId(userId);
+        verify(transactionRepository, times(1)).findByWalletId(walletId);
+    }
+
+    @Test
+    void testGetTransactionHistoryWhenNoTransactions() {
+        Long userId = 1L;
+        Long walletId = 2L;
+
+        when(walletRepository.findIdByUserId(userId)).thenReturn(Optional.of(walletId));
+        when(transactionRepository.findByWalletId(walletId)).thenReturn(Collections.emptyList());
+
+        List<Transaction> transactions = walletService.getTransactionHistory(userId);
+
+        assertEquals(0, transactions.size());
+        verify(walletRepository).findIdByUserId(userId);
+        verify(transactionRepository).findByWalletId(walletId);
     }
 }
