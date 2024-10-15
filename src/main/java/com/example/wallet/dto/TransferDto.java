@@ -8,7 +8,7 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 @NoArgsConstructor
 public class TransferDto {
-    private Long senderId;
-    private Long recipientId;
+    private Long senderWalletId;
+    private Long recipientWalletId;
     private Double amount;
 }

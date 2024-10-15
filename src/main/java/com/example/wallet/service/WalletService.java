@@ -22,8 +22,8 @@ public class WalletService {
     }
 
     @Transactional
-    public Double deposit(Long userId, Double amount) {
-        Wallet wallet = walletRepository.findByUserId(userId).orElseThrow(() -> new UserNotFoundException("User not found"));;
+    public Double deposit(Long walletId, Double amount) {
+        Wallet wallet = walletRepository.findById(walletId).orElseThrow(() -> new UserNotFoundException("User not found"));;
         Double newBalance = wallet.deposit(amount);
         walletRepository.save(wallet);
 
@@ -34,8 +34,8 @@ public class WalletService {
     }
 
     @Transactional
-    public Double withdraw(Long userId, Double amount) {
-        Wallet wallet = walletRepository.findByUserId(userId).orElseThrow(() -> new UserNotFoundException("User not found"));;
+    public Double withdraw(Long walletId, Double amount) {
+        Wallet wallet = walletRepository.findById(walletId).orElseThrow(() -> new UserNotFoundException("User not found"));;
         Double newBalance = wallet.withdraw(amount);
         walletRepository.save(wallet);
 
@@ -46,10 +46,10 @@ public class WalletService {
     }
 
     @Transactional
-    public Double transfer(Long senderId, Long recipientId, Double amount) {
-        Wallet senderWallet = walletRepository.findByUserId(senderId)
+    public Double transfer(Long senderWalletId, Long recipientWalletId, Double amount) {
+        Wallet senderWallet = walletRepository.findById(senderWalletId)
                 .orElseThrow(() -> new UserNotFoundException("Sender not found"));
-        Wallet recipientWallet = walletRepository.findByUserId(recipientId)
+        Wallet recipientWallet = walletRepository.findById(recipientWalletId)
                 .orElseThrow(() -> new UserNotFoundException("Recipient not found"));
 
         Double senderNewBalance = senderWallet.transfer(recipientWallet, amount);
@@ -62,5 +62,10 @@ public class WalletService {
         transactionRepository.save(recipientTransaction);
 
         return senderNewBalance;
+    }
+
+    public boolean isUserWalletOwner(Long userId, Long walletId) {
+        Long walletIdFromUserId = walletRepository.findIdByUserId(userId).orElseThrow(() -> new UserNotFoundException("User not found"));
+        return walletIdFromUserId.equals(walletId);
     }
 }

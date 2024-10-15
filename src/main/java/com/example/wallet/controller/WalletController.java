@@ -23,7 +23,10 @@ public class WalletController {
     @PostMapping("/{walletId}/deposit")
     public ResponseEntity<?> deposit(@PathVariable Long userId, @PathVariable Long walletId, @RequestBody @Valid WalletDto request) {
         try {
-            Double amount = walletService.deposit(userId, request.getAmount());
+            if (!walletService.isUserWalletOwner(userId, walletId)) {
+                return ResponseEntity.status(HttpStatus.FORBIDDEN).body("Access denied: Wallet does not belong to user");
+            }
+            Double amount = walletService.deposit(request.getWalletId(), request.getAmount());
             return ResponseEntity.ok(amount);
         } catch (UserNotFoundException e) {
             return ResponseEntity.status(HttpStatus.NOT_FOUND).body("User not found");
@@ -37,7 +40,10 @@ public class WalletController {
     @PostMapping("/{walletId}/withdrawal")
     public ResponseEntity<?> withdraw(@PathVariable Long userId, @PathVariable Long walletId, @RequestBody @Valid WalletDto request) {
         try {
-            Double amount = walletService.withdraw(userId, request.getAmount());
+            if (!walletService.isUserWalletOwner(userId, walletId)) {
+                return ResponseEntity.status(HttpStatus.FORBIDDEN).body("Access denied: Wallet does not belong to user");
+            }
+            Double amount = walletService.withdraw(request.getWalletId(), request.getAmount());
             return ResponseEntity.ok(amount);
         } catch (UserNotFoundException e) {
             return ResponseEntity.status(HttpStatus.NOT_FOUND).body("User not found");
@@ -52,7 +58,10 @@ public class WalletController {
     public ResponseEntity<?> transfer(@PathVariable Long userId, @PathVariable Long walletId,
                                       @RequestBody @Valid TransferDto request) {
         try {
-            Double newBalance = walletService.transfer(userId, request.getRecipientId(), request.getAmount());
+            if (!walletService.isUserWalletOwner(userId, walletId)) {
+                return ResponseEntity.status(HttpStatus.FORBIDDEN).body("Access denied: Wallet does not belong to user");
+            }
+            Double newBalance = walletService.transfer(request.getSenderWalletId(), request.getRecipientWalletId(), request.getAmount());
             return ResponseEntity.ok(newBalance);
         } catch (UserNotFoundException e) {
             return ResponseEntity.status(HttpStatus.NOT_FOUND).body("User not found");

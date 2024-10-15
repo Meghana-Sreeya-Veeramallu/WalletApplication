@@ -8,6 +8,6 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 @NoArgsConstructor
 public class WalletDto {
-    private Long userId;
+    private Long walletId;
     private Double amount;
 }
