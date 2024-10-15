@@ -26,6 +26,7 @@ public class User {
         this.username = username;
         this.password = password;
         this.wallet = new Wallet();
+        this.wallet.setUser(this);
     }
 
     public User(String username, String password, CurrencyType currency) {
@@ -36,6 +37,7 @@ public class User {
         this.username = username;
         this.password = password;
         this.wallet = new Wallet(currency);
+        this.wallet.setUser(this);
     }
 
     private void validate(String username, String password) {

@@ -5,8 +5,8 @@ import jakarta.persistence.*;
 import java.time.LocalDateTime;
 
 @Entity
-@Table(name = "transactions")
-public class Transaction {
+@Table(name = "intra_transactions")
+public class IntraTransaction {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
@@ -20,9 +20,9 @@ public class Transaction {
     private Double amount;
     private LocalDateTime timestamp;
 
-    public Transaction() {}
+    public IntraTransaction() {}
 
-    public Transaction(Wallet wallet, TransactionType type, Double amount) {
+    public IntraTransaction(Wallet wallet, TransactionType type, Double amount) {
         this.wallet = wallet;
         this.type = type;
         this.amount = amount;

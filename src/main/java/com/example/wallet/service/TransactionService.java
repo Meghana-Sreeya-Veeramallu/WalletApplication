@@ -1,30 +1,38 @@
 package com.example.wallet.service;
 
-import com.example.wallet.Exceptions.UserNotFoundException;
-import com.example.wallet.model.Transaction;
-import com.example.wallet.repository.TransactionRepository;
-import com.example.wallet.repository.WalletRepository;
+import com.example.wallet.model.InterTransaction;
+import com.example.wallet.model.IntraTransaction;
+import com.example.wallet.repository.InterTransactionRepository;
+import com.example.wallet.repository.IntraTransactionRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.ArrayList;
 import java.util.List;
 
 @Service
 public class TransactionService {
-    private final WalletRepository walletRepository;
-    private final TransactionRepository transactionRepository;
+    private final IntraTransactionRepository intraTransactionRepository;
+    private final InterTransactionRepository interTransactionRepository;
 
     @Autowired
-    public TransactionService(WalletRepository walletRepository, TransactionRepository transactionRepository) {
-        this.walletRepository = walletRepository;
-        this.transactionRepository = transactionRepository;
+    public TransactionService(IntraTransactionRepository intraTransactionRepository, InterTransactionRepository interTransactionRepository) {
+        this.intraTransactionRepository = intraTransactionRepository;
+        this.interTransactionRepository = interTransactionRepository;
     }
 
     @Transactional(readOnly = true)
-    public List<Transaction> getTransactionHistory(Long userId) {
-        Long walletId = walletRepository.findIdByUserId(userId)
-                .orElseThrow(() -> new UserNotFoundException("User not found"));
-        return transactionRepository.findByWalletId(walletId);
+    public List<Object> getTransactionHistory(Long walletId) {
+        List<IntraTransaction> intraTransactions = intraTransactionRepository.findByWalletId(walletId);
+        List<InterTransaction> sentTransactions = interTransactionRepository.findBySenderWalletId(walletId);
+        List<InterTransaction> receivedTransactions = interTransactionRepository.findByRecipientWalletId(walletId);
+
+        List<Object> allTransactions = new ArrayList<>();
+        allTransactions.addAll(intraTransactions);
+        allTransactions.addAll(sentTransactions);
+        allTransactions.addAll(receivedTransactions);
+
+        return allTransactions;
     }
 }

@@ -2,9 +2,11 @@ package com.example.wallet.service;
 
 import com.example.wallet.Enums.TransactionType;
 import com.example.wallet.Exceptions.UserNotFoundException;
-import com.example.wallet.model.Transaction;
+import com.example.wallet.model.InterTransaction;
+import com.example.wallet.model.IntraTransaction;
 import com.example.wallet.model.Wallet;
-import com.example.wallet.repository.TransactionRepository;
+import com.example.wallet.repository.InterTransactionRepository;
+import com.example.wallet.repository.IntraTransactionRepository;
 import com.example.wallet.repository.WalletRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -13,12 +15,14 @@ import org.springframework.transaction.annotation.Transactional;
 @Service
 public class WalletService {
     private final WalletRepository walletRepository;
-    private final TransactionRepository transactionRepository;
+    private final IntraTransactionRepository intraTransactionRepository;
+    private final InterTransactionRepository interTransactionRepository;
 
     @Autowired
-    public WalletService(WalletRepository walletRepository, TransactionRepository transactionRepository) {
+    public WalletService(WalletRepository walletRepository, IntraTransactionRepository intraTransactionRepository, InterTransactionRepository interTransactionRepository) {
         this.walletRepository = walletRepository;
-        this.transactionRepository = transactionRepository;
+        this.intraTransactionRepository = intraTransactionRepository;
+        this.interTransactionRepository = interTransactionRepository;
     }
 
     @Transactional
@@ -27,8 +31,8 @@ public class WalletService {
         Double newBalance = wallet.deposit(amount);
         walletRepository.save(wallet);
 
-        Transaction transaction = new Transaction(wallet, TransactionType.DEPOSIT, amount);
-        transactionRepository.save(transaction);
+        IntraTransaction intraTransaction = new IntraTransaction(wallet, TransactionType.DEPOSIT, amount);
+        intraTransactionRepository.save(intraTransaction);
 
         return newBalance;
     }
@@ -39,8 +43,8 @@ public class WalletService {
         Double newBalance = wallet.withdraw(amount);
         walletRepository.save(wallet);
 
-        Transaction transaction = new Transaction(wallet, TransactionType.WITHDRAWAL, amount);
-        transactionRepository.save(transaction);
+        IntraTransaction intraTransaction = new IntraTransaction(wallet, TransactionType.WITHDRAWAL, amount);
+        intraTransactionRepository.save(intraTransaction);
 
         return newBalance;
     }
@@ -56,10 +60,8 @@ public class WalletService {
         walletRepository.save(senderWallet);
         walletRepository.save(recipientWallet);
 
-        Transaction senderTransaction = new Transaction(senderWallet, TransactionType.TRANSFER_SEND, amount);
-        Transaction recipientTransaction = new Transaction(recipientWallet, TransactionType.TRANSFER_RECEIVE, amount);
-        transactionRepository.save(senderTransaction);
-        transactionRepository.save(recipientTransaction);
+        InterTransaction interTransaction = new InterTransaction(senderWallet, recipientWallet, TransactionType.TRANSFER, amount);
+        interTransactionRepository.save(interTransaction);
 
         return senderNewBalance;
     }

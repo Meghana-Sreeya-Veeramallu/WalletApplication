@@ -1,79 +1,104 @@
 package com.example.wallet.service;
 
-import static org.mockito.Mockito.*;
-import static org.junit.jupiter.api.Assertions.*;
-
-import com.example.wallet.Exceptions.*;
-import com.example.wallet.model.Transaction;
-import com.example.wallet.repository.TransactionRepository;
-import com.example.wallet.repository.WalletRepository;
+import com.example.wallet.Enums.TransactionType;
+import com.example.wallet.model.InterTransaction;
+import com.example.wallet.model.IntraTransaction;
+import com.example.wallet.model.Wallet;
+import com.example.wallet.repository.InterTransactionRepository;
+import com.example.wallet.repository.IntraTransactionRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
 
-import java.util.Arrays;
-import java.util.Collections;
+import java.util.ArrayList;
 import java.util.List;
-import java.util.Optional;
+
+import static org.junit.jupiter.api.Assertions.*;
+import static org.mockito.Mockito.when;
 
 public class TransactionServiceTest {
-    Long userId;
-    Long walletId;
-
     @InjectMocks
     private TransactionService transactionService;
 
     @Mock
-    private WalletRepository walletRepository;
+    private IntraTransactionRepository intraTransactionRepository;
+
     @Mock
-    private TransactionRepository transactionRepository;
+    private InterTransactionRepository interTransactionRepository;
 
     @BeforeEach
     void setUp() {
         MockitoAnnotations.openMocks(this);
-        userId = 1L;
-        walletId = 2L;
     }
 
     @Test
-    void testGetTransactionHistoryWhenUserNotFound() {
-        when(walletRepository.findIdByUserId(userId)).thenReturn(Optional.empty());
+    void testGetTransactionHistoryWithIntraTransactions() {
+        Long walletId = 1L;
 
-        assertThrows(UserNotFoundException.class, () -> {
-            transactionService.getTransactionHistory(userId);
-        });
+        List<IntraTransaction> intraTransactions = new ArrayList<>();
+        intraTransactions.add(new IntraTransaction(new Wallet(), TransactionType.DEPOSIT, 100.0));
 
-        verify(walletRepository, times(1)).findIdByUserId(userId);
-        verifyNoInteractions(transactionRepository);
+        when(intraTransactionRepository.findByWalletId(walletId)).thenReturn(intraTransactions);
+        when(interTransactionRepository.findBySenderWalletId(walletId)).thenReturn(new ArrayList<>());
+        when(interTransactionRepository.findByRecipientWalletId(walletId)).thenReturn(new ArrayList<>());
+
+        List<Object> result = transactionService.getTransactionHistory(walletId);
+
+        assertEquals(1, result.size());
     }
 
     @Test
-    void testGetTransactionHistorySuccess() {
-        Transaction transaction1 = new Transaction();
-        Transaction transaction2 = new Transaction();
+    void testGetTransactionHistoryWithInterTransactions() {
+        Long walletId = 2L;
 
-        when(walletRepository.findIdByUserId(userId)).thenReturn(Optional.of(walletId));
-        when(transactionRepository.findByWalletId(walletId)).thenReturn(Arrays.asList(transaction1, transaction2));
+        List<InterTransaction> sentTransactions = new ArrayList<>();
+        sentTransactions.add(new InterTransaction(new Wallet(), new Wallet(), TransactionType.TRANSFER, 100.0));
 
-        List<Transaction> transactions = transactionService.getTransactionHistory(userId);
+        when(intraTransactionRepository.findByWalletId(walletId)).thenReturn(new ArrayList<>());
+        when(interTransactionRepository.findBySenderWalletId(walletId)).thenReturn(sentTransactions);
+        when(interTransactionRepository.findByRecipientWalletId(walletId)).thenReturn(new ArrayList<>());
 
-        assertEquals(2, transactions.size());
-        assertEquals(Arrays.asList(transaction1, transaction2), transactions);
-        verify(walletRepository, times(1)).findIdByUserId(userId);
-        verify(transactionRepository, times(1)).findByWalletId(walletId);
+        List<Object> result = transactionService.getTransactionHistory(walletId);
+
+        assertEquals(1, result.size());
     }
 
     @Test
-    void testGetTransactionHistoryWhenNoTransactions() {
-        when(walletRepository.findIdByUserId(userId)).thenReturn(Optional.of(walletId));
-        when(transactionRepository.findByWalletId(walletId)).thenReturn(Collections.emptyList());
+    void testGetTransactionHistoryWithBothIntraAndInterTransactions() {
+        Long walletId = 2L;
 
-        List<Transaction> transactions = transactionService.getTransactionHistory(userId);
+        List<IntraTransaction> intraTransactions = new ArrayList<>();
+        intraTransactions.add(new IntraTransaction(new Wallet(), TransactionType.DEPOSIT, 100.0));
+        intraTransactions.add(new IntraTransaction(new Wallet(), TransactionType.WITHDRAWAL, 10.0));
 
-        assertEquals(0, transactions.size());
-        verify(walletRepository).findIdByUserId(userId);
-        verify(transactionRepository).findByWalletId(walletId);
+        List<InterTransaction> sentTransactions = new ArrayList<>();
+        sentTransactions.add(new InterTransaction(new Wallet(), new Wallet(), TransactionType.TRANSFER, 100.0));
+
+        List<InterTransaction> receivedTransactions = new ArrayList<>();
+        receivedTransactions.add(new InterTransaction(new Wallet(), new Wallet(), TransactionType.TRANSFER, 150.0));
+
+        when(intraTransactionRepository.findByWalletId(walletId)).thenReturn(intraTransactions);
+        when(interTransactionRepository.findBySenderWalletId(walletId)).thenReturn(sentTransactions);
+        when(interTransactionRepository.findByRecipientWalletId(walletId)).thenReturn(receivedTransactions);
+
+        List<Object> result = transactionService.getTransactionHistory(walletId);
+
+        assertEquals(4, result.size());
+    }
+
+    @Test
+    void testGetTransactionHistory_WithNoTransactions() {
+        Long walletId = 3L;
+
+        when(intraTransactionRepository.findByWalletId(walletId)).thenReturn(new ArrayList<>());
+        when(interTransactionRepository.findBySenderWalletId(walletId)).thenReturn(new ArrayList<>());
+        when(interTransactionRepository.findByRecipientWalletId(walletId)).thenReturn(new ArrayList<>());
+
+        List<Object> result = transactionService.getTransactionHistory(walletId);
+
+        assertEquals(0, result.size());
+        assertTrue(result.isEmpty());
     }
 }

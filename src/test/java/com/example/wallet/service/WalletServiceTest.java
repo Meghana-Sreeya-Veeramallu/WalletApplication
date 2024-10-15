@@ -4,9 +4,11 @@ import static org.mockito.Mockito.*;
 import static org.junit.jupiter.api.Assertions.*;
 
 import com.example.wallet.Exceptions.*;
-import com.example.wallet.model.Transaction;
+import com.example.wallet.model.InterTransaction;
+import com.example.wallet.model.IntraTransaction;
 import com.example.wallet.model.Wallet;
-import com.example.wallet.repository.TransactionRepository;
+import com.example.wallet.repository.InterTransactionRepository;
+import com.example.wallet.repository.IntraTransactionRepository;
 import com.example.wallet.repository.WalletRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -26,7 +28,9 @@ public class WalletServiceTest {
     @Mock
     private WalletRepository walletRepository;
     @Mock
-    private TransactionRepository transactionRepository;
+    private IntraTransactionRepository intraTransactionRepository;
+    @Mock
+    private InterTransactionRepository interTransactionRepository;
 
     @BeforeEach
     void setUp() {
@@ -44,7 +48,7 @@ public class WalletServiceTest {
 
         assertEquals(depositAmount, newBalance);
         verify(walletRepository, times(1)).findById(walletId);
-        verify(transactionRepository, times(1)).save(any(Transaction.class));
+        verify(intraTransactionRepository, times(1)).save(any(IntraTransaction.class));
     }
 
     @Test
@@ -56,7 +60,7 @@ public class WalletServiceTest {
                 walletService.deposit(walletId, depositAmount)
         );
         verify(walletRepository, times(1)).findById(walletId);
-        verify(transactionRepository, times(0)).save(any(Transaction.class));
+        verify(intraTransactionRepository, times(0)).save(any(IntraTransaction.class));
     }
 
     @Test
@@ -69,7 +73,7 @@ public class WalletServiceTest {
             walletService.deposit(invalidWalletId, depositAmount)
         );
         verify(walletRepository, times(1)).findById(invalidWalletId);
-        verify(transactionRepository, times(0)).save(any(Transaction.class));
+        verify(intraTransactionRepository, times(0)).save(any(IntraTransaction.class));
     }
 
     @Test
@@ -82,7 +86,7 @@ public class WalletServiceTest {
 
         assertEquals(50.0, newBalance);
         verify(walletRepository, times(2)).findById(walletId);
-        verify(transactionRepository, times(2)).save(any(Transaction.class));
+        verify(intraTransactionRepository, times(2)).save(any(IntraTransaction.class));
     }
 
     @Test
@@ -95,7 +99,7 @@ public class WalletServiceTest {
             walletService.withdraw(walletId, withdrawAmount)
         );
         verify(walletRepository, times(2)).findById(walletId);
-        verify(transactionRepository, times(1)).save(any(Transaction.class));
+        verify(intraTransactionRepository, times(1)).save(any(IntraTransaction.class));
     }
 
     @Test
@@ -108,7 +112,7 @@ public class WalletServiceTest {
             walletService.withdraw(walletId, withdrawAmount)
         );
         verify(walletRepository, times(2)).findById(walletId);
-        verify(transactionRepository, times(1)).save(any(Transaction.class));
+        verify(intraTransactionRepository, times(1)).save(any(IntraTransaction.class));
     }
 
     @Test
@@ -121,7 +125,7 @@ public class WalletServiceTest {
             walletService.withdraw(invalidWalletId, withdrawAmount)
         );
         verify(walletRepository, times(1)).findById(invalidWalletId);
-        verify(transactionRepository, times(0)).save(any(Transaction.class));
+        verify(intraTransactionRepository, times(0)).save(any(IntraTransaction.class));
     }
 
     @Test
@@ -141,7 +145,8 @@ public class WalletServiceTest {
         assertEquals(70.0, newBalance);
         verify(walletRepository, times(2)).findById(senderWalletId);
         verify(walletRepository, times(1)).findById(recipientWalletId);
-        verify(transactionRepository, times(3)).save(any(Transaction.class));
+        verify(intraTransactionRepository, times(1)).save(any(IntraTransaction.class));
+        verify(interTransactionRepository, times(1)).save(any(InterTransaction.class));
     }
 
     @Test
@@ -161,7 +166,7 @@ public class WalletServiceTest {
         assertEquals("Sender not found", exception.getMessage());
         verify(walletRepository, times(1)).findById(invalidsenderWalletId);
         verify(walletRepository, times(0)).findById(recipientWalletId);
-        verify(transactionRepository, times(0)).save(any(Transaction.class));
+        verify(interTransactionRepository, times(0)).save(any(InterTransaction.class));
     }
 
     @Test
@@ -182,7 +187,8 @@ public class WalletServiceTest {
         assertEquals("Recipient not found", exception.getMessage());
         verify(walletRepository, times(2)).findById(senderWalletId);
         verify(walletRepository, times(1)).findById(invalidrecipientWalletId);
-        verify(transactionRepository, times(1)).save(any(Transaction.class));
+        verify(intraTransactionRepository, times(1)).save(any(IntraTransaction.class));
+        verify(interTransactionRepository, times(0)).save(any(InterTransaction.class));
     }
 
     @Test
@@ -204,7 +210,8 @@ public class WalletServiceTest {
         assertEquals("Insufficient funds for transfer", exception.getMessage());
         verify(walletRepository, times(2)).findById(senderWalletId);
         verify(walletRepository, times(1)).findById(recipientWalletId);
-        verify(transactionRepository, times(1)).save(any(Transaction.class));
+        verify(intraTransactionRepository, times(1)).save(any(IntraTransaction.class));
+        verify(interTransactionRepository, times(0)).save(any(InterTransaction.class));
     }
 
     @Test
@@ -226,7 +233,8 @@ public class WalletServiceTest {
         assertEquals("Transfer amount must be positive", exception.getMessage());
         verify(walletRepository, times(2)).findById(senderWalletId);
         verify(walletRepository, times(1)).findById(recipientWalletId);
-        verify(transactionRepository, times(1)).save(any(Transaction.class));
+        verify(intraTransactionRepository, times(1)).save(any(IntraTransaction.class));
+        verify(interTransactionRepository, times(0)).save(any(InterTransaction.class));
     }
 
     @Test

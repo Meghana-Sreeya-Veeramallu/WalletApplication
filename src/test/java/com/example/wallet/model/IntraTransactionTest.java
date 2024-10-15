@@ -4,7 +4,7 @@ import com.example.wallet.Enums.TransactionType;
 import org.junit.jupiter.api.Test;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 
-class TransactionTest {
+class IntraTransactionTest {
 
     @Test
     void testTransactionConstructor() throws Exception {
@@ -12,8 +12,8 @@ class TransactionTest {
         TransactionType type = TransactionType.DEPOSIT;
         Double amount = 100.0;
 
-        Transaction transaction = new Transaction(wallet, type, amount);
+        IntraTransaction intraTransaction = new IntraTransaction(wallet, type, amount);
 
-        assertNotNull(transaction);
+        assertNotNull(intraTransaction);
     }
 }
