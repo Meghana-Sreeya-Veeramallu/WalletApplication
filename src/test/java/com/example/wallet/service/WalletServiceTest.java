@@ -14,9 +14,6 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
 
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.List;
 import java.util.Optional;
 
 public class WalletServiceTest {
@@ -230,52 +227,5 @@ public class WalletServiceTest {
         verify(walletRepository, times(2)).findByUserId(senderId);
         verify(walletRepository, times(1)).findByUserId(recipientId);
         verify(transactionRepository, times(1)).save(any(Transaction.class));
-    }
-
-    @Test
-    void testGetTransactionHistoryWhenUserNotFound() {
-        Long userId = 1L;
-
-        when(walletRepository.findIdByUserId(userId)).thenReturn(Optional.empty());
-
-        assertThrows(UserNotFoundException.class, () -> {
-            walletService.getTransactionHistory(userId);
-        });
-
-        verify(walletRepository, times(1)).findIdByUserId(userId);
-        verifyNoInteractions(transactionRepository);
-    }
-
-    @Test
-    void testGetTransactionHistorySuccess() {
-        Long userId = 1L;
-        Long walletId = 2L;
-        Transaction transaction1 = new Transaction();
-        Transaction transaction2 = new Transaction();
-
-        when(walletRepository.findIdByUserId(userId)).thenReturn(Optional.of(walletId));
-        when(transactionRepository.findByWalletId(walletId)).thenReturn(Arrays.asList(transaction1, transaction2));
-
-        List<Transaction> transactions = walletService.getTransactionHistory(userId);
-
-        assertEquals(2, transactions.size());
-        assertEquals(Arrays.asList(transaction1, transaction2), transactions);
-        verify(walletRepository, times(1)).findIdByUserId(userId);
-        verify(transactionRepository, times(1)).findByWalletId(walletId);
-    }
-
-    @Test
-    void testGetTransactionHistoryWhenNoTransactions() {
-        Long userId = 1L;
-        Long walletId = 2L;
-
-        when(walletRepository.findIdByUserId(userId)).thenReturn(Optional.of(walletId));
-        when(transactionRepository.findByWalletId(walletId)).thenReturn(Collections.emptyList());
-
-        List<Transaction> transactions = walletService.getTransactionHistory(userId);
-
-        assertEquals(0, transactions.size());
-        verify(walletRepository).findIdByUserId(userId);
-        verify(transactionRepository).findByWalletId(walletId);
     }
 }

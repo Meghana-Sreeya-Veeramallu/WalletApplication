@@ -10,8 +10,6 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.util.List;
-
 @Service
 public class WalletService {
     private final WalletRepository walletRepository;
@@ -64,12 +62,5 @@ public class WalletService {
         transactionRepository.save(recipientTransaction);
 
         return senderNewBalance;
-    }
-
-    @Transactional(readOnly = true)
-    public List<Transaction> getTransactionHistory(Long userId) {
-        Long walletId = walletRepository.findIdByUserId(userId)
-                .orElseThrow(() -> new UserNotFoundException("User not found"));
-        return transactionRepository.findByWalletId(walletId);
     }
 }
