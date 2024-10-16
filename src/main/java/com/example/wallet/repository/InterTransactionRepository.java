@@ -8,9 +8,6 @@ import org.springframework.data.jpa.repository.Query;
 import java.util.List;
 
 public interface InterTransactionRepository extends JpaRepository<InterTransaction, Long> {
-    @Query("SELECT it FROM InterTransaction it WHERE it.senderWallet.id = :senderWalletId AND (:transactionType IS NULL OR it.type = :transactionType)")
-    List<InterTransaction> findBySenderWalletIdAndTransactionType(Long senderWalletId, TransactionType transactionType);
-
-    @Query("SELECT it FROM InterTransaction it WHERE it.recipientWallet.id = :recipientWalletId AND (:transactionType IS NULL OR it.type = :transactionType)")
-    List<InterTransaction> findByRecipientWalletIdAndTransactionType(Long recipientWalletId, TransactionType transactionType);
+    @Query("SELECT it FROM InterTransaction it WHERE (it.senderWallet.id = :walletId OR it.recipientWallet.id = :walletId) AND (:transactionType IS NULL OR it.type = :transactionType)")
+    List<InterTransaction> findByWalletIdAndTransactionType(Long walletId, TransactionType transactionType);
 }

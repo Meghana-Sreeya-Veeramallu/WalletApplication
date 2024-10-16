@@ -28,13 +28,11 @@ public class TransactionService {
     @Transactional(readOnly = true)
     public List<Object> getTransactionHistory(Long walletId, SortOrder sortOrder, TransactionType transactionType) {
         List<IntraTransaction> intraTransactions = intraTransactionRepository.findByWalletIdAndTransactionType(walletId, transactionType);
-        List<InterTransaction> sentTransactions = interTransactionRepository.findBySenderWalletIdAndTransactionType(walletId, transactionType);
-        List<InterTransaction> receivedTransactions = interTransactionRepository.findByRecipientWalletIdAndTransactionType(walletId, transactionType);
+        List<InterTransaction> interTransactions = interTransactionRepository.findByWalletIdAndTransactionType(walletId, transactionType);
 
         List<Object> allTransactions = new ArrayList<>();
         allTransactions.addAll(intraTransactions);
-        allTransactions.addAll(sentTransactions);
-        allTransactions.addAll(receivedTransactions);
+        allTransactions.addAll(interTransactions);
 
         SortOrder order = (sortOrder != null) ? sortOrder : SortOrder.ASC;
 
