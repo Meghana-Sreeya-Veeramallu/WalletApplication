@@ -8,6 +8,7 @@ import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
@@ -21,13 +22,15 @@ public class WalletController {
     }
 
     @PostMapping("/{walletId}/deposit")
+    @PreAuthorize("isAuthenticated()")
     public ResponseEntity<?> deposit(@PathVariable Long userId, @PathVariable Long walletId, @RequestBody @Valid WalletDto request) {
         try {
-            if (!walletService.isUserWalletOwner(userId, walletId)) {
-                return ResponseEntity.status(HttpStatus.FORBIDDEN).body("Access denied: Wallet does not belong to user");
+            if (!walletService.isUserAuthorized(userId, walletId)) {
+                return ResponseEntity.status(HttpStatus.FORBIDDEN).body("Access denied: User is not authorized");
             }
-            Double amount = walletService.deposit(request.getWalletId(), request.getAmount());
-            return ResponseEntity.ok(amount);
+            walletService.deposit(walletId, request.getAmount());
+            String successMessage = "Amount deposited successfully: " + request.getAmount();
+            return ResponseEntity.ok(successMessage);
         } catch (UserNotFoundException e) {
             return ResponseEntity.status(HttpStatus.NOT_FOUND).body("User not found");
         } catch (DepositAmountMustBePositiveException e) {
@@ -38,13 +41,15 @@ public class WalletController {
     }
 
     @PostMapping("/{walletId}/withdrawal")
+    @PreAuthorize("isAuthenticated()")
     public ResponseEntity<?> withdraw(@PathVariable Long userId, @PathVariable Long walletId, @RequestBody @Valid WalletDto request) {
         try {
-            if (!walletService.isUserWalletOwner(userId, walletId)) {
-                return ResponseEntity.status(HttpStatus.FORBIDDEN).body("Access denied: Wallet does not belong to user");
+            if (!walletService.isUserAuthorized(userId, walletId)) {
+                return ResponseEntity.status(HttpStatus.FORBIDDEN).body("Access denied: User is not authorized");
             }
-            Double amount = walletService.withdraw(request.getWalletId(), request.getAmount());
-            return ResponseEntity.ok(amount);
+            walletService.withdraw(walletId, request.getAmount());
+            String successMessage = "Amount withdrawn successfully: " + request.getAmount();
+            return ResponseEntity.ok(successMessage);
         } catch (UserNotFoundException e) {
             return ResponseEntity.status(HttpStatus.NOT_FOUND).body("User not found");
         } catch (WithdrawAmountMustBePositiveException | InsufficientFundsException e) {
@@ -55,14 +60,16 @@ public class WalletController {
     }
 
     @PostMapping("/{walletId}/transfer")
+    @PreAuthorize("isAuthenticated()")
     public ResponseEntity<?> transfer(@PathVariable Long userId, @PathVariable Long walletId,
                                       @RequestBody @Valid TransferDto request) {
         try {
-            if (!walletService.isUserWalletOwner(userId, walletId)) {
-                return ResponseEntity.status(HttpStatus.FORBIDDEN).body("Access denied: Wallet does not belong to user");
+            if (!walletService.isUserAuthorized(userId, walletId)) {
+                return ResponseEntity.status(HttpStatus.FORBIDDEN).body("Access denied: User is not authorized");
             }
-            Double newBalance = walletService.transfer(request.getSenderWalletId(), request.getRecipientWalletId(), request.getAmount());
-            return ResponseEntity.ok(newBalance);
+            walletService.transfer(walletId, request.getRecipientWalletId(), request.getAmount());
+            String successMessage = "Amount transferred successfully: " + request.getAmount();
+            return ResponseEntity.ok(successMessage);
         } catch (UserNotFoundException e) {
             return ResponseEntity.status(HttpStatus.NOT_FOUND).body("User not found");
         } catch (TransferAmountMustBePositiveException | InsufficientFundsException e) {

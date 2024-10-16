@@ -57,7 +57,7 @@ class TransactionControllerTest {
         transactions.add(new IntraTransaction());
         transactions.add(new InterTransaction(new Wallet(), new Wallet(), TransactionType.TRANSFER, 100.0));
 
-        when(walletService.isUserWalletOwner(userId, walletId)).thenReturn(true);
+        when(walletService.isUserAuthorized(userId, walletId)).thenReturn(true);
         when(transactionService.getTransactionHistory(walletId)).thenReturn(transactions);
 
         MvcResult mvcResult = mockMvc.perform(MockMvcRequestBuilders.get("/users/{userId}/wallets/{walletId}/transactions", userId, walletId))
@@ -72,7 +72,7 @@ class TransactionControllerTest {
 
     @Test
     void testGetTransactionHistoryWhenUserNotFoundException() throws Exception {
-        when(walletService.isUserWalletOwner(userId, walletId)).thenReturn(true);
+        when(walletService.isUserAuthorized(userId, walletId)).thenReturn(true);
         when(transactionService.getTransactionHistory(walletId)).thenThrow(new UserNotFoundException("User not found"));
 
         mockMvc.perform(MockMvcRequestBuilders.get("/users/{userId}/wallets/{walletId}/transactions", userId, walletId))
@@ -89,12 +89,12 @@ class TransactionControllerTest {
         transactions.add(new IntraTransaction());
         transactions.add(new InterTransaction(new Wallet(), new Wallet(), TransactionType.TRANSFER, 100.0));
 
-        when(walletService.isUserWalletOwner(userId, walletId)).thenReturn(false);
+        when(walletService.isUserAuthorized(userId, walletId)).thenReturn(false);
         when(transactionService.getTransactionHistory(walletId)).thenReturn(transactions);
 
         mockMvc.perform(MockMvcRequestBuilders.get("/users/{userId}/wallets/{walletId}/transactions", userId, walletId))
                 .andExpect(status().isForbidden())
-                .andExpect(content().string("Access denied: Wallet does not belong to user"));
+                .andExpect(content().string("Access denied: User is not authorized"));
 
         verify(transactionService, times(0)).getTransactionHistory(walletId);
 
@@ -102,7 +102,7 @@ class TransactionControllerTest {
 
     @Test
     void testGetTransactionHistoryWhenOtherException() throws Exception {
-        when(walletService.isUserWalletOwner(userId, walletId)).thenReturn(true);
+        when(walletService.isUserAuthorized(userId, walletId)).thenReturn(true);
         when(transactionService.getTransactionHistory(walletId)).thenThrow(new RuntimeException("Unexpected error"));
 
         mockMvc.perform(MockMvcRequestBuilders.get("/users/{userId}/wallets/{walletId}/transactions", userId, walletId))

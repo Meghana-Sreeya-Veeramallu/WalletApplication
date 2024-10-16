@@ -6,6 +6,7 @@ import com.example.wallet.service.WalletService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -23,13 +24,14 @@ public class TransactionController {
     }
 
     @GetMapping("/{walletId}/transactions")
+    @PreAuthorize("isAuthenticated()")
     public ResponseEntity<?> getTransactionHistory(@PathVariable Long userId, @PathVariable Long walletId) {
         try {
-            if (!walletService.isUserWalletOwner(userId, walletId)) {
-                return ResponseEntity.status(HttpStatus.FORBIDDEN).body("Access denied: Wallet does not belong to user");
+            if (!walletService.isUserAuthorized(userId, walletId)) {
+                return ResponseEntity.status(HttpStatus.FORBIDDEN).body("Access denied: User is not authorized");
             }
-            List<Object> intraTransactions = transactionService.getTransactionHistory(walletId);
-            return ResponseEntity.ok(intraTransactions);
+            List<Object> transactions = transactionService.getTransactionHistory(walletId);
+            return ResponseEntity.ok(transactions);
         } catch (UserNotFoundException e) {
             return ResponseEntity.status(HttpStatus.NOT_FOUND).body("User not found");
         } catch (Exception e) {

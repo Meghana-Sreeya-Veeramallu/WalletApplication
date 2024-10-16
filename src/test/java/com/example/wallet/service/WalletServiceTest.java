@@ -6,15 +6,20 @@ import static org.junit.jupiter.api.Assertions.*;
 import com.example.wallet.Exceptions.*;
 import com.example.wallet.model.InterTransaction;
 import com.example.wallet.model.IntraTransaction;
+import com.example.wallet.model.User;
 import com.example.wallet.model.Wallet;
 import com.example.wallet.repository.InterTransactionRepository;
 import com.example.wallet.repository.IntraTransactionRepository;
+import com.example.wallet.repository.UserRepository;
 import com.example.wallet.repository.WalletRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContext;
+import org.springframework.security.core.context.SecurityContextHolder;
 
 import java.util.Optional;
 
@@ -25,6 +30,8 @@ public class WalletServiceTest {
     @InjectMocks
     private WalletService walletService;
 
+    @Mock
+    private UserRepository userRepository;
     @Mock
     private WalletRepository walletRepository;
     @Mock
@@ -238,40 +245,65 @@ public class WalletServiceTest {
     }
 
     @Test
-    void testIsUserWalletOwnerWhenUserOwnsWallet() {
+    void testIsUserAuthorizedWhenUserOwnsWallet() {
+        Authentication authentication = mock(Authentication.class);
+        when(authentication.getName()).thenReturn("testUser");
+        SecurityContext securityContext = mock(SecurityContext.class);
+        when(securityContext.getAuthentication()).thenReturn(authentication);
+        SecurityContextHolder.setContext(securityContext);
+
         Long walletId = 1L;
         Long userId = 10L;
+
+        User user = new User("testUser", "password");
+        when(userRepository.findById(userId)).thenReturn(Optional.of(user));
         when(walletRepository.findIdByUserId(userId)).thenReturn(Optional.of(walletId));
 
-        boolean result = walletService.isUserWalletOwner(userId, walletId);
+        boolean result = walletService.isUserAuthorized(userId, walletId);
 
         assertTrue(result);
         verify(walletRepository, times(1)).findIdByUserId(userId);
+        verify(userRepository, times(1)).findById(userId);
     }
 
     @Test
-    void testIsUserWalletOwnerWhenUserDoesNotOwnWallet() {
+    void testIsUserAuthorizedWhenUserDoesNotOwnWallet() {
+        Authentication authentication = mock(Authentication.class);
+        when(authentication.getName()).thenReturn("testUser");
+        SecurityContext securityContext = mock(SecurityContext.class);
+        when(securityContext.getAuthentication()).thenReturn(authentication);
+        SecurityContextHolder.setContext(securityContext);
+
         Long userId = 1L;
         Long walletId = 20L;
+
+        User user = new User("testUser", "password");
+        when(userRepository.findById(userId)).thenReturn(Optional.of(user));
         when(walletRepository.findIdByUserId(userId)).thenReturn(Optional.of(10L));
 
-        boolean result = walletService.isUserWalletOwner(userId, walletId);
+        boolean result = walletService.isUserAuthorized(userId, walletId);
 
         assertFalse(result);
         verify(walletRepository, times(1)).findIdByUserId(userId);
+        verify(userRepository, times(1)).findById(userId);
     }
 
     @Test
-    void testIsUserWalletOwnerWhenUserNotFound() {
+    void testIsUserAuthorizedWhenUserNotFound() {
+        Authentication authentication = mock(Authentication.class);
+        when(authentication.getName()).thenReturn("testUser");
+        SecurityContext securityContext = mock(SecurityContext.class);
+        when(securityContext.getAuthentication()).thenReturn(authentication);
+        SecurityContextHolder.setContext(securityContext);
+
         Long userId = 1L;
         Long walletId = 10L;
-        when(walletRepository.findIdByUserId(userId)).thenReturn(Optional.empty());
 
         Exception exception = assertThrows(UserNotFoundException.class, () -> {
-            walletService.isUserWalletOwner(userId, walletId);
+            walletService.isUserAuthorized(userId, walletId);
         });
 
         assertEquals("User not found", exception.getMessage());
-        verify(walletRepository, times(1)).findIdByUserId(userId);
+        verify(walletRepository, times(0)).findIdByUserId(userId);
     }
 }

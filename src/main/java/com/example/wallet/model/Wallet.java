@@ -6,9 +6,10 @@ import com.example.wallet.Exceptions.InsufficientFundsException;
 import com.example.wallet.Exceptions.TransferAmountMustBePositiveException;
 import com.example.wallet.Exceptions.WithdrawAmountMustBePositiveException;
 import jakarta.persistence.*;
+import lombok.Getter;
 import lombok.Setter;
 
-@Setter
+@Getter
 @Entity
 @Table(name = "wallets")
 public class Wallet {
@@ -17,6 +18,7 @@ public class Wallet {
     private Long id;
     private Double balance;
 
+    @Setter
     @OneToOne
     @JoinColumn(name = "user_id", referencedColumnName = "id", nullable = false)
     private User user;

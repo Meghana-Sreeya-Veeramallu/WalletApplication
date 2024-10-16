@@ -2,9 +2,11 @@ package com.example.wallet.model;
 
 import com.example.wallet.Enums.TransactionType;
 import jakarta.persistence.*;
+import lombok.Getter;
 
 import java.time.LocalDateTime;
 
+@Getter
 @Entity
 @Table(name = "inter_transactions")
 public class InterTransaction {
@@ -35,4 +37,3 @@ public class InterTransaction {
         this.timestamp = LocalDateTime.now();
     }
 }
-

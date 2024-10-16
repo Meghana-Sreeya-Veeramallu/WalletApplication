@@ -16,7 +16,7 @@ import org.springframework.test.web.servlet.MvcResult;
 import org.springframework.test.web.servlet.request.MockMvcRequestBuilders;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
@@ -46,10 +46,10 @@ class WalletControllerTest {
     @Test
     void testDepositWhenSuccessful() throws Exception {
         Double amount = 100.0;
-        WalletDto requestBody = new WalletDto(walletId, amount);
+        WalletDto requestBody = new WalletDto(amount);
         String jsonRequestBody = objectMapper.writeValueAsString(requestBody);
 
-        when(walletService.isUserWalletOwner(userId, walletId)).thenReturn(true);
+        when(walletService.isUserAuthorized(userId, walletId)).thenReturn(true);
         when(walletService.deposit(walletId, amount)).thenReturn(amount);
 
         MvcResult mvcResult = mockMvc.perform(MockMvcRequestBuilders.post("/users/{userId}/wallets/{walletId}/deposit", userId, walletId)
@@ -58,8 +58,9 @@ class WalletControllerTest {
                 .andExpect(status().isOk())
                 .andReturn();
 
-        Double responseBody = objectMapper.readValue(mvcResult.getResponse().getContentAsString(), Double.class);
-        assertEquals(amount, responseBody);
+        String responseBody = mvcResult.getResponse().getContentAsString();
+        assertTrue(responseBody.contains("Amount deposited successfully"));
+        assertTrue(responseBody.contains(amount.toString()));
 
         verify(walletService, times(1)).deposit(walletId, amount);
     }
@@ -67,10 +68,10 @@ class WalletControllerTest {
     @Test
     void testDepositWhenUserNotFoundException() throws Exception {
         Double amount = 100.0;
-        WalletDto requestBody = new WalletDto(walletId, amount);
+        WalletDto requestBody = new WalletDto(amount);
         String jsonRequestBody = objectMapper.writeValueAsString(requestBody);
 
-        when(walletService.isUserWalletOwner(userId, walletId)).thenReturn(true);
+        when(walletService.isUserAuthorized(userId, walletId)).thenReturn(true);
         when(walletService.deposit(walletId, amount)).thenThrow(new UserNotFoundException("User not found"));
 
         mockMvc.perform(MockMvcRequestBuilders.post("/users/{userId}/wallets/{walletId}/deposit", userId, walletId)
@@ -85,17 +86,17 @@ class WalletControllerTest {
     @Test
     void testDepositWhenWalletDoesNotBelongToOwnerException() throws Exception {
         Double amount = 100.0;
-        WalletDto requestBody = new WalletDto(walletId, amount);
+        WalletDto requestBody = new WalletDto(amount);
         String jsonRequestBody = objectMapper.writeValueAsString(requestBody);
 
-        when(walletService.isUserWalletOwner(userId, walletId)).thenReturn(false);
+        when(walletService.isUserAuthorized(userId, walletId)).thenReturn(false);
         when(walletService.deposit(walletId, amount)).thenReturn(amount);
 
         mockMvc.perform(MockMvcRequestBuilders.post("/users/{userId}/wallets/{walletId}/deposit", userId, walletId)
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(jsonRequestBody))
                 .andExpect(status().isForbidden())
-                .andExpect(content().string("Access denied: Wallet does not belong to user"));
+                .andExpect(content().string("Access denied: User is not authorized"));
 
         verify(walletService, times(0)).deposit(walletId, amount);
     }
@@ -103,10 +104,10 @@ class WalletControllerTest {
     @Test
     void testDepositWhenDepositAmountIsNegative() throws Exception {
         Double amount = -100.0;
-        WalletDto requestBody = new WalletDto(walletId, amount);
+        WalletDto requestBody = new WalletDto(amount);
         String jsonRequestBody = objectMapper.writeValueAsString(requestBody);
 
-        when(walletService.isUserWalletOwner(userId, walletId)).thenReturn(true);
+        when(walletService.isUserAuthorized(userId, walletId)).thenReturn(true);
         when(walletService.deposit(walletId, amount)).thenThrow(new DepositAmountMustBePositiveException("Deposit amount must be positive"));
 
         mockMvc.perform(MockMvcRequestBuilders.post("/users/{userId}/wallets/{walletId}/deposit", userId, walletId)
@@ -121,10 +122,10 @@ class WalletControllerTest {
     @Test
     void testWithdrawWhenSuccessful() throws Exception {
         Double amount = 100.0;
-        WalletDto requestBody = new WalletDto(walletId, amount);
+        WalletDto requestBody = new WalletDto(amount);
         String jsonRequestBody = objectMapper.writeValueAsString(requestBody);
 
-        when(walletService.isUserWalletOwner(userId, walletId)).thenReturn(true);
+        when(walletService.isUserAuthorized(userId, walletId)).thenReturn(true);
         when(walletService.withdraw(walletId, amount)).thenReturn(amount);
 
         MvcResult mvcResult = mockMvc.perform(MockMvcRequestBuilders.post("/users/{userId}/wallets/{walletId}/withdrawal", userId, walletId)
@@ -133,8 +134,9 @@ class WalletControllerTest {
                 .andExpect(status().isOk())
                 .andReturn();;
 
-        Double responseBody = objectMapper.readValue(mvcResult.getResponse().getContentAsString(), Double.class);
-        assertEquals(amount, responseBody);
+        String responseBody = mvcResult.getResponse().getContentAsString();
+        assertTrue(responseBody.contains("Amount withdrawn successfully"));
+        assertTrue(responseBody.contains(amount.toString()));
 
         verify(walletService, times(1)).withdraw(walletId, amount);
     }
@@ -142,10 +144,10 @@ class WalletControllerTest {
     @Test
     void testWithdrawWhenUserNotFoundException() throws Exception {
         Double amount = 100.0;
-        WalletDto requestBody = new WalletDto(walletId, amount);
+        WalletDto requestBody = new WalletDto(amount);
         String jsonRequestBody = objectMapper.writeValueAsString(requestBody);
 
-        when(walletService.isUserWalletOwner(userId, walletId)).thenReturn(true);
+        when(walletService.isUserAuthorized(userId, walletId)).thenReturn(true);
         when(walletService.withdraw(walletId, amount)).thenThrow(new UserNotFoundException("User not found"));
 
         mockMvc.perform(MockMvcRequestBuilders.post("/users/{userId}/wallets/{walletId}/withdrawal", userId, walletId)
@@ -160,17 +162,17 @@ class WalletControllerTest {
     @Test
     void testWithdrawWhenWalletDoesNotBelongToOwnerException() throws Exception {
         Double amount = 100.0;
-        WalletDto requestBody = new WalletDto(walletId, amount);
+        WalletDto requestBody = new WalletDto(amount);
         String jsonRequestBody = objectMapper.writeValueAsString(requestBody);
 
-        when(walletService.isUserWalletOwner(userId, walletId)).thenReturn(false);
+        when(walletService.isUserAuthorized(userId, walletId)).thenReturn(false);
         when(walletService.withdraw(walletId, amount)).thenReturn(amount);
 
         mockMvc.perform(MockMvcRequestBuilders.post("/users/{userId}/wallets/{walletId}/withdrawal", userId, walletId)
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(jsonRequestBody))
                 .andExpect(status().isForbidden())
-                .andExpect(content().string("Access denied: Wallet does not belong to user"));
+                .andExpect(content().string("Access denied: User is not authorized"));
 
         verify(walletService, times(0)).withdraw(walletId, amount);
     }
@@ -178,10 +180,10 @@ class WalletControllerTest {
     @Test
     void testWithdrawWhenWithdrawAmountIsNegative() throws Exception {
         Double amount = -100.0;
-        WalletDto requestBody = new WalletDto(walletId, amount);
+        WalletDto requestBody = new WalletDto(amount);
         String jsonRequestBody = objectMapper.writeValueAsString(requestBody);
 
-        when(walletService.isUserWalletOwner(userId, walletId)).thenReturn(true);
+        when(walletService.isUserAuthorized(userId, walletId)).thenReturn(true);
         when(walletService.withdraw(walletId, amount)).thenThrow(new WithdrawAmountMustBePositiveException("Withdraw amount must be positive"));
 
         mockMvc.perform(MockMvcRequestBuilders.post("/users/{userId}/wallets/{walletId}/withdrawal", userId, walletId)
@@ -196,10 +198,10 @@ class WalletControllerTest {
     @Test
     void testWithdrawWhenInsufficientFundsException() throws Exception {
         Double amount = 50.0;
-        WalletDto requestBody = new WalletDto(walletId, amount);
+        WalletDto requestBody = new WalletDto(amount);
         String jsonRequestBody = objectMapper.writeValueAsString(requestBody);
 
-        when(walletService.isUserWalletOwner(userId, walletId)).thenReturn(true);
+        when(walletService.isUserAuthorized(userId, walletId)).thenReturn(true);
         when(walletService.withdraw(walletId, amount)).thenThrow(new InsufficientFundsException("Insufficient funds"));
 
         mockMvc.perform(MockMvcRequestBuilders.post("/users/{userId}/wallets/{walletId}/withdrawal", userId, walletId)
@@ -216,10 +218,10 @@ class WalletControllerTest {
         Long senderWalletId = 1L;
         Long recipientWalletId = 2L;
         Double amount = 30.0;
-        TransferDto requestBody = new TransferDto(senderWalletId, recipientWalletId, amount);
+        TransferDto requestBody = new TransferDto(recipientWalletId, amount);
         String jsonRequestBody = objectMapper.writeValueAsString(requestBody);
 
-        when(walletService.isUserWalletOwner(userId, senderWalletId)).thenReturn(true);
+        when(walletService.isUserAuthorized(userId, senderWalletId)).thenReturn(true);
         when(walletService.transfer(senderWalletId, recipientWalletId, amount)).thenReturn(70.0);
 
         MvcResult mvcResult = mockMvc.perform(MockMvcRequestBuilders.post("/users/{userId}/wallets/{senderWalletId}/transfer", userId, senderWalletId)
@@ -228,8 +230,9 @@ class WalletControllerTest {
                 .andExpect(status().isOk())
                 .andReturn();
 
-        Double responseBody = objectMapper.readValue(mvcResult.getResponse().getContentAsString(), Double.class);
-//        assertEquals(70.0, responseBody);
+        String responseBody = mvcResult.getResponse().getContentAsString();
+        assertTrue(responseBody.contains("Amount transferred successfully"));
+        assertTrue(responseBody.contains(amount.toString()));
 
         verify(walletService, times(1)).transfer(senderWalletId, recipientWalletId, amount);
     }
@@ -239,10 +242,10 @@ class WalletControllerTest {
         Long senderWalletId = 1L;
         Long recipientWalletId = 2L;
         Double amount = 30.0;
-        TransferDto requestBody = new TransferDto(senderWalletId, recipientWalletId, amount);
+        TransferDto requestBody = new TransferDto(recipientWalletId, amount);
         String jsonRequestBody = objectMapper.writeValueAsString(requestBody);
 
-        when(walletService.isUserWalletOwner(userId, senderWalletId)).thenReturn(true);
+        when(walletService.isUserAuthorized(userId, senderWalletId)).thenReturn(true);
         when(walletService.transfer(senderWalletId, recipientWalletId, amount)).thenThrow(new UserNotFoundException("Sender not found"));
 
         mockMvc.perform(MockMvcRequestBuilders.post("/users/{userId}/wallets/{senderWalletId}/transfer", userId, senderWalletId)
@@ -259,10 +262,10 @@ class WalletControllerTest {
         Long senderWalletId = 1L;
         Long recipientWalletId = 2L;
         Double amount = 30.0;
-        TransferDto requestBody = new TransferDto(senderWalletId, recipientWalletId, amount);
+        TransferDto requestBody = new TransferDto(recipientWalletId, amount);
         String jsonRequestBody = objectMapper.writeValueAsString(requestBody);
 
-        when(walletService.isUserWalletOwner(userId, senderWalletId)).thenReturn(true);
+        when(walletService.isUserAuthorized(userId, senderWalletId)).thenReturn(true);
         when(walletService.transfer(senderWalletId, recipientWalletId, amount)).thenThrow(new UserNotFoundException("Recipient not found"));
 
         mockMvc.perform(MockMvcRequestBuilders.post("/users/{userId}/wallets/{senderWalletId}/transfer", userId, senderWalletId)
@@ -279,17 +282,17 @@ class WalletControllerTest {
         Long senderWalletId = 1L;
         Long recipientWalletId = 2L;
         Double amount = 30.0;
-        TransferDto requestBody = new TransferDto(senderWalletId, recipientWalletId, amount);
+        TransferDto requestBody = new TransferDto(recipientWalletId, amount);
         String jsonRequestBody = objectMapper.writeValueAsString(requestBody);
 
-        when(walletService.isUserWalletOwner(userId, senderWalletId)).thenReturn(false);
+        when(walletService.isUserAuthorized(userId, senderWalletId)).thenReturn(false);
         when(walletService.transfer(senderWalletId, recipientWalletId, amount)).thenReturn(amount);
 
         mockMvc.perform(MockMvcRequestBuilders.post("/users/{userId}/wallets/{senderWalletId}/transfer", userId, senderWalletId)
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(jsonRequestBody))
                 .andExpect(status().isForbidden())
-                .andExpect(content().string("Access denied: Wallet does not belong to user"));
+                .andExpect(content().string("Access denied: User is not authorized"));
 
         verify(walletService, times(0)).transfer(senderWalletId, recipientWalletId, amount);
     }
@@ -299,10 +302,10 @@ class WalletControllerTest {
         Long senderWalletId = 1L;
         Long recipientWalletId = 2L;
         Double amount = 50.0;
-        TransferDto requestBody = new TransferDto(senderWalletId, recipientWalletId, amount);
+        TransferDto requestBody = new TransferDto(recipientWalletId, amount);
         String jsonRequestBody = objectMapper.writeValueAsString(requestBody);
 
-        when(walletService.isUserWalletOwner(userId, senderWalletId)).thenReturn(true);
+        when(walletService.isUserAuthorized(userId, senderWalletId)).thenReturn(true);
         when(walletService.transfer(senderWalletId, recipientWalletId, amount)).thenThrow(new InsufficientFundsException("Insufficient funds"));
 
         mockMvc.perform(MockMvcRequestBuilders.post("/users/{userId}/wallets/{senderWalletId}/transfer", userId, senderWalletId)
@@ -319,10 +322,10 @@ class WalletControllerTest {
         Long senderWalletId = 1L;
         Long recipientWalletId = 2L;
         Double amount = -30.0;
-        TransferDto requestBody = new TransferDto(senderWalletId, recipientWalletId, amount);
+        TransferDto requestBody = new TransferDto(recipientWalletId, amount);
         String jsonRequestBody = objectMapper.writeValueAsString(requestBody);
 
-        when(walletService.isUserWalletOwner(userId, senderWalletId)).thenReturn(true);
+        when(walletService.isUserAuthorized(userId, senderWalletId)).thenReturn(true);
         when(walletService.transfer(senderWalletId, recipientWalletId, amount)).thenThrow(new TransferAmountMustBePositiveException("Transfer amount must be positive"));
 
         mockMvc.perform(MockMvcRequestBuilders.post("/users/{userId}/wallets/{senderWalletId}/transfer", userId, senderWalletId)

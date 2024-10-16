@@ -4,11 +4,15 @@ import com.example.wallet.Enums.TransactionType;
 import com.example.wallet.Exceptions.UserNotFoundException;
 import com.example.wallet.model.InterTransaction;
 import com.example.wallet.model.IntraTransaction;
+import com.example.wallet.model.User;
 import com.example.wallet.model.Wallet;
 import com.example.wallet.repository.InterTransactionRepository;
 import com.example.wallet.repository.IntraTransactionRepository;
+import com.example.wallet.repository.UserRepository;
 import com.example.wallet.repository.WalletRepository;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -17,12 +21,14 @@ public class WalletService {
     private final WalletRepository walletRepository;
     private final IntraTransactionRepository intraTransactionRepository;
     private final InterTransactionRepository interTransactionRepository;
+    private final UserRepository userRepository;
 
     @Autowired
-    public WalletService(WalletRepository walletRepository, IntraTransactionRepository intraTransactionRepository, InterTransactionRepository interTransactionRepository) {
+    public WalletService(WalletRepository walletRepository, IntraTransactionRepository intraTransactionRepository, InterTransactionRepository interTransactionRepository, UserRepository userRepository) {
         this.walletRepository = walletRepository;
         this.intraTransactionRepository = intraTransactionRepository;
         this.interTransactionRepository = interTransactionRepository;
+        this.userRepository = userRepository;
     }
 
     @Transactional
@@ -66,8 +72,11 @@ public class WalletService {
         return senderNewBalance;
     }
 
-    public boolean isUserWalletOwner(Long userId, Long walletId) {
+    public boolean isUserAuthorized(Long userId, Long walletId) {
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        String authenticatedUsername = authentication.getName();
+        User user = userRepository.findById(userId).orElseThrow(() -> new UserNotFoundException("User not found"));
         Long walletIdFromUserId = walletRepository.findIdByUserId(userId).orElseThrow(() -> new UserNotFoundException("User not found"));
-        return walletIdFromUserId.equals(walletId);
+        return (user.getUsername().equals(authenticatedUsername) && walletIdFromUserId.equals(walletId));
     }
 }
