@@ -1,5 +1,6 @@
 package com.example.wallet.service;
 
+import com.example.wallet.Enums.SortOrder;
 import com.example.wallet.model.InterTransaction;
 import com.example.wallet.model.IntraTransaction;
 import com.example.wallet.repository.InterTransactionRepository;
@@ -9,6 +10,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.List;
 
 @Service
@@ -23,7 +25,7 @@ public class TransactionService {
     }
 
     @Transactional(readOnly = true)
-    public List<Object> getTransactionHistory(Long walletId) {
+    public List<Object> getTransactionHistory(Long walletId, SortOrder sortOrder) {
         List<IntraTransaction> intraTransactions = intraTransactionRepository.findByWalletId(walletId);
         List<InterTransaction> sentTransactions = interTransactionRepository.findBySenderWalletId(walletId);
         List<InterTransaction> receivedTransactions = interTransactionRepository.findByRecipientWalletId(walletId);
@@ -32,6 +34,23 @@ public class TransactionService {
         allTransactions.addAll(intraTransactions);
         allTransactions.addAll(sentTransactions);
         allTransactions.addAll(receivedTransactions);
+
+        SortOrder order = (sortOrder != null) ? sortOrder : SortOrder.ASC;
+
+        Comparator<Object> comparator = Comparator.comparing(transaction -> {
+            if (transaction instanceof IntraTransaction) {
+                return ((IntraTransaction) transaction).getTimestamp();
+            } else if (transaction instanceof InterTransaction) {
+                return ((InterTransaction) transaction).getTimestamp();
+            }
+            return null;
+        });
+
+        if (SortOrder.DESC.equals(order)) {
+            comparator = comparator.reversed();
+        }
+
+        allTransactions.sort(comparator);
 
         return allTransactions;
     }

@@ -1,5 +1,6 @@
 package com.example.wallet.controller;
 
+import com.example.wallet.Enums.SortOrder;
 import com.example.wallet.Enums.TransactionType;
 import com.example.wallet.Exceptions.*;
 import com.example.wallet.model.InterTransaction;
@@ -54,11 +55,11 @@ class TransactionControllerTest {
     @Test
     void testGetTransactionHistoryWhenSuccessful() throws Exception {
         List<Object> transactions = new ArrayList<>();
-        transactions.add(new IntraTransaction());
+        transactions.add(new IntraTransaction(new Wallet(), TransactionType.WITHDRAWAL, 10.0));
         transactions.add(new InterTransaction(new Wallet(), new Wallet(), TransactionType.TRANSFER, 100.0));
 
         when(walletService.isUserAuthorized(userId, walletId)).thenReturn(true);
-        when(transactionService.getTransactionHistory(walletId)).thenReturn(transactions);
+        when(transactionService.getTransactionHistory(walletId, null)).thenReturn(transactions);
 
         MvcResult mvcResult = mockMvc.perform(MockMvcRequestBuilders.get("/users/{userId}/wallets/{walletId}/transactions", userId, walletId))
                 .andExpect(status().isOk())
@@ -67,19 +68,20 @@ class TransactionControllerTest {
         List<Object> responseBody = objectMapper.readValue(mvcResult.getResponse().getContentAsString(), new TypeReference<>() {});
         assertEquals(transactions.size(), responseBody.size());
 
-        verify(transactionService, times(1)).getTransactionHistory(walletId);
+        System.out.println(responseBody);
+        verify(transactionService, times(1)).getTransactionHistory(walletId, null);
     }
 
     @Test
     void testGetTransactionHistoryWhenUserNotFoundException() throws Exception {
         when(walletService.isUserAuthorized(userId, walletId)).thenReturn(true);
-        when(transactionService.getTransactionHistory(walletId)).thenThrow(new UserNotFoundException("User not found"));
+        when(transactionService.getTransactionHistory(walletId, null)).thenThrow(new UserNotFoundException("User not found"));
 
         mockMvc.perform(MockMvcRequestBuilders.get("/users/{userId}/wallets/{walletId}/transactions", userId, walletId))
                 .andExpect(status().isNotFound())
                 .andExpect(content().string("User not found"));
 
-        verify(transactionService, times(1)).getTransactionHistory(walletId);
+        verify(transactionService, times(1)).getTransactionHistory(walletId, null);
 
     }
 
@@ -90,25 +92,65 @@ class TransactionControllerTest {
         transactions.add(new InterTransaction(new Wallet(), new Wallet(), TransactionType.TRANSFER, 100.0));
 
         when(walletService.isUserAuthorized(userId, walletId)).thenReturn(false);
-        when(transactionService.getTransactionHistory(walletId)).thenReturn(transactions);
+        when(transactionService.getTransactionHistory(walletId, null)).thenReturn(transactions);
 
         mockMvc.perform(MockMvcRequestBuilders.get("/users/{userId}/wallets/{walletId}/transactions", userId, walletId))
                 .andExpect(status().isForbidden())
                 .andExpect(content().string("Access denied: User is not authorized"));
 
-        verify(transactionService, times(0)).getTransactionHistory(walletId);
+        verify(transactionService, times(0)).getTransactionHistory(walletId, null);
 
     }
 
     @Test
     void testGetTransactionHistoryWhenOtherException() throws Exception {
         when(walletService.isUserAuthorized(userId, walletId)).thenReturn(true);
-        when(transactionService.getTransactionHistory(walletId)).thenThrow(new RuntimeException("Unexpected error"));
+        when(transactionService.getTransactionHistory(walletId, null)).thenThrow(new RuntimeException("Unexpected error"));
 
         mockMvc.perform(MockMvcRequestBuilders.get("/users/{userId}/wallets/{walletId}/transactions", userId, walletId))
                 .andExpect(status().isInternalServerError())
                 .andExpect(content().string("An error occurred: Unexpected error"));
 
-        verify(transactionService, times(1)).getTransactionHistory(walletId);
+        verify(transactionService, times(1)).getTransactionHistory(walletId, null);
+    }
+
+    @Test
+    void testGetTransactionHistoryWhenSortAscending() throws Exception {
+        List<Object> transactions = new ArrayList<>();
+        transactions.add(new IntraTransaction(new Wallet(), TransactionType.WITHDRAWAL, 10.0));
+        transactions.add(new InterTransaction(new Wallet(), new Wallet(), TransactionType.TRANSFER, 100.0));
+
+        when(walletService.isUserAuthorized(userId, walletId)).thenReturn(true);
+        when(transactionService.getTransactionHistory(walletId, SortOrder.ASC)).thenReturn(transactions);
+
+        MvcResult mvcResult = mockMvc.perform(MockMvcRequestBuilders.get("/users/{userId}/wallets/{walletId}/transactions?sortOrder=ASC", userId, walletId))
+                .andExpect(status().isOk())
+                .andReturn();
+
+        List<Object> responseBody = objectMapper.readValue(mvcResult.getResponse().getContentAsString(), new TypeReference<>() {});
+        assertEquals(transactions.size(), responseBody.size());
+
+        System.out.println(responseBody);
+        verify(transactionService, times(1)).getTransactionHistory(walletId, SortOrder.ASC);
+    }
+
+    @Test
+    void testGetTransactionHistoryWhenSortDescending() throws Exception {
+        List<Object> transactions = new ArrayList<>();
+        transactions.add(new IntraTransaction(new Wallet(), TransactionType.WITHDRAWAL, 10.0));
+        transactions.add(new InterTransaction(new Wallet(), new Wallet(), TransactionType.TRANSFER, 100.0));
+
+        when(walletService.isUserAuthorized(userId, walletId)).thenReturn(true);
+        when(transactionService.getTransactionHistory(walletId, SortOrder.DESC)).thenReturn(transactions);
+
+        MvcResult mvcResult = mockMvc.perform(MockMvcRequestBuilders.get("/users/{userId}/wallets/{walletId}/transactions?sortOrder=DESC", userId, walletId))
+                .andExpect(status().isOk())
+                .andReturn();
+
+        List<Object> responseBody = objectMapper.readValue(mvcResult.getResponse().getContentAsString(), new TypeReference<>() {});
+        assertEquals(transactions.size(), responseBody.size());
+
+        System.out.println(responseBody);
+        verify(transactionService, times(1)).getTransactionHistory(walletId, SortOrder.DESC);
     }
 }
