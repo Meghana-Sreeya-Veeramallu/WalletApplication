@@ -23,14 +23,6 @@ public class User {
 
     public User() {}
 
-    public User(String username, String password) {
-        validate(username, password);
-        this.username = username;
-        this.password = password;
-        this.wallet = new Wallet();
-        this.wallet.setUser(this);
-    }
-
     public User(String username, String password, CurrencyType currency) {
         validate(username, password);
         if (currency == null) {

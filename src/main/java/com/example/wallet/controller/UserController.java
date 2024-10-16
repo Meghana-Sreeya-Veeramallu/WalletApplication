@@ -22,9 +22,9 @@ public class UserController {
     @PostMapping("/register")
     public ResponseEntity<?> register(@RequestBody @Valid RegistrationDto request) {
         try {
-            User user = userService.registerUser(request.getUsername(), request.getPassword());
+            User user = userService.registerUser(request.getUsername(), request.getPassword(), request.getCurrency());
             return ResponseEntity.ok(user);
-        } catch (UsernameCannotBeNullOrEmptyException | PasswordCannotBeNullOrEmptyException e) {
+        } catch (UsernameCannotBeNullOrEmptyException | PasswordCannotBeNullOrEmptyException | CurrencyCannotBeNullException e) {
             return ResponseEntity.badRequest().body("Bad request: " + e.getMessage());
         } catch (Exception e) {
             return ResponseEntity.internalServerError().body("An error occurred: " + e.getMessage());

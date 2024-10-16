@@ -3,6 +3,7 @@ package com.example.wallet.service;
 import static org.mockito.Mockito.*;
 import static org.junit.jupiter.api.Assertions.*;
 
+import com.example.wallet.Enums.CurrencyType;
 import com.example.wallet.Exceptions.*;
 import com.example.wallet.model.InterTransaction;
 import com.example.wallet.model.IntraTransaction;
@@ -255,7 +256,7 @@ public class WalletServiceTest {
         Long walletId = 1L;
         Long userId = 10L;
 
-        User user = new User("testUser", "password");
+        User user = new User("testUser", "password", CurrencyType.INR);
         when(userRepository.findById(userId)).thenReturn(Optional.of(user));
         when(walletRepository.findIdByUserId(userId)).thenReturn(Optional.of(walletId));
 
@@ -277,7 +278,7 @@ public class WalletServiceTest {
         Long userId = 1L;
         Long walletId = 20L;
 
-        User user = new User("testUser", "password");
+        User user = new User("testUser", "password", CurrencyType.INR);
         when(userRepository.findById(userId)).thenReturn(Optional.of(user));
         when(walletRepository.findIdByUserId(userId)).thenReturn(Optional.of(10L));
 

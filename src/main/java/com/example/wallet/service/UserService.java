@@ -1,5 +1,6 @@
 package com.example.wallet.service;
 
+import com.example.wallet.Enums.CurrencyType;
 import com.example.wallet.model.User;
 import com.example.wallet.repository.UserRepository;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -19,8 +20,8 @@ public class UserService implements UserDetailsService {
         this.userRepository = userRepository;
     }
 
-    public User registerUser(String username, String password) {
-        User user = new User(username, password);
+    public User registerUser(String username, String password, CurrencyType currency) {
+        User user = new User(username, password, currency);
         return userRepository.save(user);
     }
 

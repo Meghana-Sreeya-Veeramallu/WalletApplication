@@ -12,7 +12,7 @@ public class UserTest {
 
     @Test
     public void testValidUser() {
-        User user = new User("testUser", "testPassword");
+        User user = new User("testUser", "testPassword", CurrencyType.EUR);
 
         assertNotNull(user);
     }
@@ -20,28 +20,28 @@ public class UserTest {
     @Test
     public void testUsernameCannotBeNull() {
         assertThrows(UsernameCannotBeNullOrEmptyException.class, () -> {
-            new User(null, "validPassword");
+            new User(null, "validPassword", CurrencyType.EUR);
         });
     }
 
     @Test
     public void testUsernameCannotBeEmpty() {
         assertThrows(UsernameCannotBeNullOrEmptyException.class, () -> {
-            new User(" ", "validPassword");
+            new User(" ", "validPassword", CurrencyType.EUR);
         });
     }
 
     @Test
     public void testPasswordCannotBeNull() {
         assertThrows(PasswordCannotBeNullOrEmptyException.class, () -> {
-            new User("validUsername", null);
+            new User("validUsername", null, CurrencyType.EUR);
         });
     }
 
     @Test
     public void testPasswordCannotBeEmpty() {
         assertThrows(PasswordCannotBeNullOrEmptyException.class, () -> {
-            new User("validUsername", "");
+            new User("validUsername", "", CurrencyType.EUR);
         });
     }
 
