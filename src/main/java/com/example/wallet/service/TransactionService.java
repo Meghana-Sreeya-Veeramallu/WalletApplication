@@ -1,6 +1,7 @@
 package com.example.wallet.service;
 
 import com.example.wallet.Enums.SortOrder;
+import com.example.wallet.Enums.TransactionType;
 import com.example.wallet.model.InterTransaction;
 import com.example.wallet.model.IntraTransaction;
 import com.example.wallet.repository.InterTransactionRepository;
@@ -25,10 +26,10 @@ public class TransactionService {
     }
 
     @Transactional(readOnly = true)
-    public List<Object> getTransactionHistory(Long walletId, SortOrder sortOrder) {
-        List<IntraTransaction> intraTransactions = intraTransactionRepository.findByWalletId(walletId);
-        List<InterTransaction> sentTransactions = interTransactionRepository.findBySenderWalletId(walletId);
-        List<InterTransaction> receivedTransactions = interTransactionRepository.findByRecipientWalletId(walletId);
+    public List<Object> getTransactionHistory(Long walletId, SortOrder sortOrder, TransactionType transactionType) {
+        List<IntraTransaction> intraTransactions = intraTransactionRepository.findByWalletIdAndTransactionType(walletId, transactionType);
+        List<InterTransaction> sentTransactions = interTransactionRepository.findBySenderWalletIdAndTransactionType(walletId, transactionType);
+        List<InterTransaction> receivedTransactions = interTransactionRepository.findByRecipientWalletIdAndTransactionType(walletId, transactionType);
 
         List<Object> allTransactions = new ArrayList<>();
         allTransactions.addAll(intraTransactions);

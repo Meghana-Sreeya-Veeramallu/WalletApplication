@@ -1,6 +1,7 @@
 package com.example.wallet.controller;
 
 import com.example.wallet.Enums.SortOrder;
+import com.example.wallet.Enums.TransactionType;
 import com.example.wallet.Exceptions.*;
 import com.example.wallet.service.TransactionService;
 import com.example.wallet.service.WalletService;
@@ -27,12 +28,13 @@ public class TransactionController {
     @GetMapping("/{walletId}/transactions")
     @PreAuthorize("isAuthenticated()")
     public ResponseEntity<?> getTransactionHistory(@PathVariable Long userId, @PathVariable Long walletId,
-                                                   @RequestParam(required = false) SortOrder sortOrder) {
+                                                   @RequestParam(required = false) SortOrder sortOrder,
+                                                   @RequestParam(required = false) TransactionType transactionType) {
         try {
             if (!walletService.isUserAuthorized(userId, walletId)) {
                 return ResponseEntity.status(HttpStatus.FORBIDDEN).body("Access denied: User is not authorized");
             }
-            List<Object> transactions = transactionService.getTransactionHistory(walletId, sortOrder);
+            List<Object> transactions = transactionService.getTransactionHistory(walletId, sortOrder, transactionType);
             return ResponseEntity.ok(transactions);
         } catch (UserNotFoundException e) {
             return ResponseEntity.status(HttpStatus.NOT_FOUND).body("User not found");
