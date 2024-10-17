@@ -42,7 +42,7 @@ class TransactionControllerTest {
     @BeforeEach
     void setUp() {
         MockitoAnnotations.openMocks(this);
-        mockMvc = MockMvcBuilders.standaloneSetup(transactionController).build();
+        mockMvc = MockMvcBuilders.standaloneSetup(transactionController).setControllerAdvice(new GlobalExceptionHandler()).build();
         objectMapper = new ObjectMapper();
         userId = 1L;
         walletId = 2L;
@@ -74,7 +74,6 @@ class TransactionControllerTest {
                 .andExpect(content().string("User not found"));
 
         verify(transactionService, times(1)).getTransactionHistory(userId, walletId, null, null, null);
-
     }
 
     @Test
@@ -86,7 +85,6 @@ class TransactionControllerTest {
                 .andExpect(content().string("Access denied: User is not authorized"));
 
         verify(transactionService, times(1)).getTransactionHistory(userId, walletId, null, null, null);
-
     }
 
     @Test

@@ -17,7 +17,7 @@ import org.springframework.test.web.servlet.MvcResult;
 import org.springframework.test.web.servlet.request.MockMvcRequestBuilders;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 
-import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.Mockito.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
@@ -36,7 +36,7 @@ class UserControllerTest {
     @BeforeEach
     void setUp() {
         MockitoAnnotations.openMocks(this);
-        mockMvc = MockMvcBuilders.standaloneSetup(userController).build();
+        mockMvc = MockMvcBuilders.standaloneSetup(userController).setControllerAdvice(new GlobalExceptionHandler()).build();
         objectMapper = new ObjectMapper();
     }
 
@@ -56,9 +56,9 @@ class UserControllerTest {
                 .andExpect(status().isOk()).andReturn();
 
         String response = mvcResult.getResponse().getContentAsString();
-        User responseUser = objectMapper.readValue(response, User.class);
+        String expectedMessage = "Successfully registered user: " + username;
 
-        assertNotNull(responseUser);
+        assertEquals(expectedMessage, response);
         verify(userService, times(1)).registerUser(username, password, CurrencyType.INR);
     }
 
@@ -78,9 +78,9 @@ class UserControllerTest {
                 .andExpect(status().isOk()).andReturn();
 
         String response = mvcResult.getResponse().getContentAsString();
-        User responseUser = objectMapper.readValue(response, User.class);
+        String expectedMessage = "Successfully registered user: " + username;
 
-        assertNotNull(responseUser);
+        assertEquals(expectedMessage, response);
         verify(userService, times(1)).registerUser(username, password, CurrencyType.USD);
     }
 

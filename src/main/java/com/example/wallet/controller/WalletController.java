@@ -1,12 +1,10 @@
 package com.example.wallet.controller;
 
-import com.example.wallet.Exceptions.*;
 import com.example.wallet.dto.TransferDto;
 import com.example.wallet.dto.WalletDto;
 import com.example.wallet.service.WalletService;
 import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
@@ -24,55 +22,25 @@ public class WalletController {
     @PostMapping("/{walletId}/deposit")
     @PreAuthorize("isAuthenticated()")
     public ResponseEntity<?> deposit(@PathVariable Long userId, @PathVariable Long walletId, @RequestBody @Valid WalletDto request) {
-        try {
-            walletService.deposit(userId, walletId, request.getAmount());
-            String successMessage = "Amount deposited successfully: " + request.getAmount();
-            return ResponseEntity.ok(successMessage);
-        } catch (UserNotAuthorizedException e) {
-            return ResponseEntity.status(HttpStatus.FORBIDDEN).body("Access denied: User is not authorized");
-        } catch (UserNotFoundException e) {
-            return ResponseEntity.status(HttpStatus.NOT_FOUND).body("User not found");
-        } catch (DepositAmountMustBePositiveException e) {
-            return ResponseEntity.badRequest().body("Bad request: " + e.getMessage());
-        } catch (Exception e) {
-            return ResponseEntity.internalServerError().body("An error occurred: " + e.getMessage());
-        }
+        walletService.deposit(userId, walletId, request.getAmount());
+        String successMessage = "Amount deposited successfully: " + request.getAmount();
+        return ResponseEntity.ok(successMessage);
     }
 
     @PostMapping("/{walletId}/withdrawal")
     @PreAuthorize("isAuthenticated()")
     public ResponseEntity<?> withdraw(@PathVariable Long userId, @PathVariable Long walletId, @RequestBody @Valid WalletDto request) {
-        try {
-            walletService.withdraw(userId, walletId, request.getAmount());
-            String successMessage = "Amount withdrawn successfully: " + request.getAmount();
-            return ResponseEntity.ok(successMessage);
-        } catch (UserNotAuthorizedException e) {
-            return ResponseEntity.status(HttpStatus.FORBIDDEN).body("Access denied: User is not authorized");
-        } catch (UserNotFoundException e) {
-            return ResponseEntity.status(HttpStatus.NOT_FOUND).body("User not found");
-        } catch (WithdrawAmountMustBePositiveException | InsufficientFundsException e) {
-            return ResponseEntity.badRequest().body("Bad request: " + e.getMessage());
-        } catch (Exception e) {
-            return ResponseEntity.internalServerError().body("An error occurred: " + e.getMessage());
-        }
+        walletService.withdraw(userId, walletId, request.getAmount());
+        String successMessage = "Amount withdrawn successfully: " + request.getAmount();
+        return ResponseEntity.ok(successMessage);
     }
 
     @PostMapping("/{walletId}/transfer")
     @PreAuthorize("isAuthenticated()")
     public ResponseEntity<?> transfer(@PathVariable Long userId, @PathVariable Long walletId,
                                       @RequestBody @Valid TransferDto request) {
-        try {
-            walletService.transfer(userId, walletId, request.getRecipientWalletId(), request.getAmount());
-            String successMessage = "Amount transferred successfully: " + request.getAmount();
-            return ResponseEntity.ok(successMessage);
-        } catch (UserNotAuthorizedException e) {
-            return ResponseEntity.status(HttpStatus.FORBIDDEN).body("Access denied: User is not authorized");
-        } catch (UserNotFoundException e) {
-            return ResponseEntity.status(HttpStatus.NOT_FOUND).body("User not found");
-        } catch (TransferAmountMustBePositiveException | InsufficientFundsException e) {
-            return ResponseEntity.badRequest().body("Bad request: " + e.getMessage());
-        } catch (Exception e) {
-            return ResponseEntity.internalServerError().body("An error occurred: " + e.getMessage());
-        }
+        walletService.transfer(userId, walletId, request.getRecipientWalletId(), request.getAmount());
+        String successMessage = "Amount transferred successfully: " + request.getAmount();
+        return ResponseEntity.ok(successMessage);
     }
 }

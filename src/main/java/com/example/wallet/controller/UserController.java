@@ -1,6 +1,5 @@
 package com.example.wallet.controller;
 
-import com.example.wallet.Exceptions.*;
 import com.example.wallet.dto.RegistrationDto;
 import com.example.wallet.model.User;
 import com.example.wallet.service.UserService;
@@ -21,13 +20,8 @@ public class UserController {
 
     @PostMapping("/register")
     public ResponseEntity<?> register(@RequestBody @Valid RegistrationDto request) {
-        try {
-            User user = userService.registerUser(request.getUsername(), request.getPassword(), request.getCurrency());
-            return ResponseEntity.ok(user);
-        } catch (UsernameCannotBeNullOrEmptyException | PasswordCannotBeNullOrEmptyException | CurrencyCannotBeNullException e) {
-            return ResponseEntity.badRequest().body("Bad request: " + e.getMessage());
-        } catch (Exception e) {
-            return ResponseEntity.internalServerError().body("An error occurred: " + e.getMessage());
-        }
+        User user = userService.registerUser(request.getUsername(), request.getPassword(), request.getCurrency());
+        String successMessage = "Successfully registered user: " + user.getUsername();
+        return ResponseEntity.ok(successMessage);
     }
 }

@@ -37,7 +37,7 @@ class WalletControllerTest {
     @BeforeEach
     void setUp() {
         MockitoAnnotations.openMocks(this);
-        mockMvc = MockMvcBuilders.standaloneSetup(walletController).build();
+        mockMvc = MockMvcBuilders.standaloneSetup(walletController).setControllerAdvice(new GlobalExceptionHandler()).build();
         objectMapper = new ObjectMapper();
         userId = 1L;
         walletId = 2L;
