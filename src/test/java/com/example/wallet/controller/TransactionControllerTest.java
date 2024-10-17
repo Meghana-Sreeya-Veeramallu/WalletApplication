@@ -6,7 +6,6 @@ import com.example.wallet.model.InterTransaction;
 import com.example.wallet.model.IntraTransaction;
 import com.example.wallet.model.Wallet;
 import com.example.wallet.service.TransactionService;
-import com.example.wallet.service.WalletService;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.jupiter.api.BeforeEach;
@@ -36,8 +35,6 @@ class TransactionControllerTest {
 
     @Mock
     private TransactionService transactionService;
-    @Mock
-    private WalletService walletService;
 
     private MockMvc mockMvc;
     private ObjectMapper objectMapper;
@@ -57,8 +54,7 @@ class TransactionControllerTest {
         transactions.add(new IntraTransaction(new Wallet(), TransactionType.WITHDRAWAL, 10.0));
         transactions.add(new InterTransaction(new Wallet(), new Wallet(), TransactionType.TRANSFER, 100.0));
 
-        when(walletService.isUserAuthorized(userId, walletId)).thenReturn(true);
-        when(transactionService.getTransactionHistory(walletId, null, null, null)).thenReturn(transactions);
+        when(transactionService.getTransactionHistory(userId, walletId, null, null, null)).thenReturn(transactions);
 
         MvcResult mvcResult = mockMvc.perform(MockMvcRequestBuilders.get("/users/{userId}/wallets/{walletId}/transactions", userId, walletId))
                 .andExpect(status().isOk())
@@ -66,49 +62,42 @@ class TransactionControllerTest {
 
         List<Object> responseBody = objectMapper.readValue(mvcResult.getResponse().getContentAsString(), new TypeReference<>() {});
         assertEquals(transactions.size(), responseBody.size());
-        verify(transactionService, times(1)).getTransactionHistory(walletId, null, null, null);
+        verify(transactionService, times(1)).getTransactionHistory(userId, walletId, null, null, null);
     }
 
     @Test
     void testGetTransactionHistoryWhenUserNotFoundException() throws Exception {
-        when(walletService.isUserAuthorized(userId, walletId)).thenReturn(true);
-        when(transactionService.getTransactionHistory(walletId, null, null, null)).thenThrow(new UserNotFoundException("User not found"));
+        when(transactionService.getTransactionHistory(userId, walletId, null, null, null)).thenThrow(new UserNotFoundException("User not found"));
 
         mockMvc.perform(MockMvcRequestBuilders.get("/users/{userId}/wallets/{walletId}/transactions", userId, walletId))
                 .andExpect(status().isNotFound())
                 .andExpect(content().string("User not found"));
 
-        verify(transactionService, times(1)).getTransactionHistory(walletId, null, null, null);
+        verify(transactionService, times(1)).getTransactionHistory(userId, walletId, null, null, null);
 
     }
 
     @Test
     void testGetTransactionHistoryWhenWalletDoesNotBelongToUserException() throws Exception {
-        List<Object> transactions = new ArrayList<>();
-        transactions.add(new IntraTransaction());
-        transactions.add(new InterTransaction(new Wallet(), new Wallet(), TransactionType.TRANSFER, 100.0));
-
-        when(walletService.isUserAuthorized(userId, walletId)).thenReturn(false);
-        when(transactionService.getTransactionHistory(walletId, null, null, null)).thenReturn(transactions);
+        when(transactionService.getTransactionHistory(userId, walletId, null, null, null)).thenThrow(new UserNotAuthorizedException("Access denied: User is not authorized"));
 
         mockMvc.perform(MockMvcRequestBuilders.get("/users/{userId}/wallets/{walletId}/transactions", userId, walletId))
                 .andExpect(status().isForbidden())
                 .andExpect(content().string("Access denied: User is not authorized"));
 
-        verify(transactionService, times(0)).getTransactionHistory(walletId, null, null, null);
+        verify(transactionService, times(1)).getTransactionHistory(userId, walletId, null, null, null);
 
     }
 
     @Test
     void testGetTransactionHistoryWhenOtherException() throws Exception {
-        when(walletService.isUserAuthorized(userId, walletId)).thenReturn(true);
-        when(transactionService.getTransactionHistory(walletId, null, null, null)).thenThrow(new RuntimeException("Unexpected error"));
+        when(transactionService.getTransactionHistory(userId, walletId, null, null, null)).thenThrow(new RuntimeException("Unexpected error"));
 
         mockMvc.perform(MockMvcRequestBuilders.get("/users/{userId}/wallets/{walletId}/transactions", userId, walletId))
                 .andExpect(status().isInternalServerError())
                 .andExpect(content().string("An error occurred: Unexpected error"));
 
-        verify(transactionService, times(1)).getTransactionHistory(walletId, null, null, null);
+        verify(transactionService, times(1)).getTransactionHistory(userId, walletId, null, null, null);
     }
 
     @Test
@@ -117,8 +106,7 @@ class TransactionControllerTest {
         transactions.add(new IntraTransaction(new Wallet(), TransactionType.WITHDRAWAL, 10.0));
         transactions.add(new InterTransaction(new Wallet(), new Wallet(), TransactionType.TRANSFER, 100.0));
 
-        when(walletService.isUserAuthorized(userId, walletId)).thenReturn(true);
-        when(transactionService.getTransactionHistory(walletId, "timestamp", "ASC", null)).thenReturn(transactions);
+        when(transactionService.getTransactionHistory(userId, walletId, "timestamp", "ASC", null)).thenReturn(transactions);
 
         MvcResult mvcResult = mockMvc.perform(MockMvcRequestBuilders.get("/users/{userId}/wallets/{walletId}/transactions?sortBy=timestamp&sortOrder=ASC", userId, walletId))
                 .andExpect(status().isOk())
@@ -126,7 +114,7 @@ class TransactionControllerTest {
 
         List<Object> responseBody = objectMapper.readValue(mvcResult.getResponse().getContentAsString(), new TypeReference<>() {});
         assertEquals(transactions.size(), responseBody.size());
-        verify(transactionService, times(1)).getTransactionHistory(walletId, "timestamp", "ASC", null);
+        verify(transactionService, times(1)).getTransactionHistory(userId, walletId, "timestamp", "ASC", null);
     }
 
     @Test
@@ -135,8 +123,7 @@ class TransactionControllerTest {
         transactions.add(new IntraTransaction(new Wallet(), TransactionType.WITHDRAWAL, 10.0));
         transactions.add(new InterTransaction(new Wallet(), new Wallet(), TransactionType.TRANSFER, 100.0));
 
-        when(walletService.isUserAuthorized(userId, walletId)).thenReturn(true);
-        when(transactionService.getTransactionHistory(walletId, "timestamp", "DESC", null)).thenReturn(transactions);
+        when(transactionService.getTransactionHistory(userId, walletId, "timestamp", "DESC", null)).thenReturn(transactions);
 
         MvcResult mvcResult = mockMvc.perform(MockMvcRequestBuilders.get("/users/{userId}/wallets/{walletId}/transactions?sortBy=timestamp&sortOrder=DESC", userId, walletId))
                 .andExpect(status().isOk())
@@ -144,7 +131,7 @@ class TransactionControllerTest {
 
         List<Object> responseBody = objectMapper.readValue(mvcResult.getResponse().getContentAsString(), new TypeReference<>() {});
         assertEquals(transactions.size(), responseBody.size());
-        verify(transactionService, times(1)).getTransactionHistory(walletId, "timestamp", "DESC", null);
+        verify(transactionService, times(1)).getTransactionHistory(userId, walletId, "timestamp", "DESC", null);
     }
 
     @Test
@@ -153,8 +140,7 @@ class TransactionControllerTest {
         transactions.add(new IntraTransaction(new Wallet(), TransactionType.DEPOSIT, 10.0));
         transactions.add(new IntraTransaction(new Wallet(), TransactionType.DEPOSIT, 70.0));
 
-        when(walletService.isUserAuthorized(userId, walletId)).thenReturn(true);
-        when(transactionService.getTransactionHistory(walletId, null, null, "DEPOSIT")).thenReturn(transactions);
+        when(transactionService.getTransactionHistory(userId, walletId, null, null, "DEPOSIT")).thenReturn(transactions);
 
         MvcResult mvcResult = mockMvc.perform(MockMvcRequestBuilders.get("/users/{userId}/wallets/{walletId}/transactions?transactionType=DEPOSIT", userId, walletId))
                 .andExpect(status().isOk())
@@ -162,7 +148,7 @@ class TransactionControllerTest {
 
         List<Object> responseBody = objectMapper.readValue(mvcResult.getResponse().getContentAsString(), new TypeReference<>() {});
         assertEquals(transactions.size(), responseBody.size());
-        verify(transactionService, times(1)).getTransactionHistory(walletId, null, null, "DEPOSIT");
+        verify(transactionService, times(1)).getTransactionHistory(userId, walletId, null, null, "DEPOSIT");
     }
 
     @Test
@@ -171,8 +157,7 @@ class TransactionControllerTest {
         transactions.add(new IntraTransaction(new Wallet(), TransactionType.WITHDRAWAL, 10.0));
         transactions.add(new IntraTransaction(new Wallet(), TransactionType.WITHDRAWAL, 70.0));
 
-        when(walletService.isUserAuthorized(userId, walletId)).thenReturn(true);
-        when(transactionService.getTransactionHistory(walletId, null, null, "WITHDRAWAL")).thenReturn(transactions);
+        when(transactionService.getTransactionHistory(userId, walletId, null, null, "WITHDRAWAL")).thenReturn(transactions);
 
         MvcResult mvcResult = mockMvc.perform(MockMvcRequestBuilders.get("/users/{userId}/wallets/{walletId}/transactions?transactionType=WITHDRAWAL", userId, walletId))
                 .andExpect(status().isOk())
@@ -180,7 +165,7 @@ class TransactionControllerTest {
 
         List<Object> responseBody = objectMapper.readValue(mvcResult.getResponse().getContentAsString(), new TypeReference<>() {});
         assertEquals(transactions.size(), responseBody.size());
-        verify(transactionService, times(1)).getTransactionHistory(walletId, null, null, "WITHDRAWAL");
+        verify(transactionService, times(1)).getTransactionHistory(userId, walletId, null, null, "WITHDRAWAL");
     }
 
     @Test
@@ -189,8 +174,7 @@ class TransactionControllerTest {
         transactions.add(new InterTransaction(new Wallet(), new Wallet(), TransactionType.TRANSFER, 10.0));
         transactions.add(new InterTransaction(new Wallet(), new Wallet(), TransactionType.TRANSFER, 70.0));
 
-        when(walletService.isUserAuthorized(userId, walletId)).thenReturn(true);
-        when(transactionService.getTransactionHistory(walletId, null, null, "TRANSFER")).thenReturn(transactions);
+        when(transactionService.getTransactionHistory(userId, walletId, null, null, "TRANSFER")).thenReturn(transactions);
 
         MvcResult mvcResult = mockMvc.perform(MockMvcRequestBuilders.get("/users/{userId}/wallets/{walletId}/transactions?transactionType=TRANSFER", userId, walletId))
                 .andExpect(status().isOk())
@@ -198,7 +182,7 @@ class TransactionControllerTest {
 
         List<Object> responseBody = objectMapper.readValue(mvcResult.getResponse().getContentAsString(), new TypeReference<>() {});
         assertEquals(transactions.size(), responseBody.size());
-        verify(transactionService, times(1)).getTransactionHistory(walletId, null, null, "TRANSFER");
+        verify(transactionService, times(1)).getTransactionHistory(userId, walletId, null, null, "TRANSFER");
     }
 
     @Test
@@ -207,8 +191,7 @@ class TransactionControllerTest {
         transactions.add(new InterTransaction(new Wallet(), new Wallet(), TransactionType.TRANSFER, 10.0));
         transactions.add(new InterTransaction(new Wallet(), new Wallet(), TransactionType.TRANSFER, 70.0));
 
-        when(walletService.isUserAuthorized(userId, walletId)).thenReturn(true);
-        when(transactionService.getTransactionHistory(walletId, "timestamp", "ASC", "TRANSFER")).thenReturn(transactions);
+        when(transactionService.getTransactionHistory(userId, walletId, "timestamp", "ASC", "TRANSFER")).thenReturn(transactions);
 
         MvcResult mvcResult = mockMvc.perform(MockMvcRequestBuilders.get("/users/{userId}/wallets/{walletId}/transactions?sortBy=timestamp&sortOrder=ASC&transactionType=TRANSFER", userId, walletId))
                 .andExpect(status().isOk())
@@ -216,7 +199,7 @@ class TransactionControllerTest {
 
         List<Object> responseBody = objectMapper.readValue(mvcResult.getResponse().getContentAsString(), new TypeReference<>() {});
         assertEquals(transactions.size(), responseBody.size());
-        verify(transactionService, times(1)).getTransactionHistory(walletId, "timestamp", "ASC", "TRANSFER");
+        verify(transactionService, times(1)).getTransactionHistory(userId, walletId, "timestamp", "ASC", "TRANSFER");
     }
 
     @Test
@@ -225,8 +208,7 @@ class TransactionControllerTest {
         transactions.add(new IntraTransaction(new Wallet(), TransactionType.DEPOSIT, 100.0));
         transactions.add(new IntraTransaction(new Wallet(), TransactionType.DEPOSIT, 200.0));
 
-        when(walletService.isUserAuthorized(userId, walletId)).thenReturn(true);
-        when(transactionService.getTransactionHistory(walletId, "amount", "DESC", "DEPOSIT")).thenReturn(transactions);
+        when(transactionService.getTransactionHistory(userId, walletId, "amount", "DESC", "DEPOSIT")).thenReturn(transactions);
 
         MvcResult mvcResult = mockMvc.perform(MockMvcRequestBuilders.get("/users/{userId}/wallets/{walletId}/transactions?sortBy=amount&sortOrder=DESC&transactionType=DEPOSIT", userId, walletId))
                 .andExpect(status().isOk())
@@ -234,7 +216,7 @@ class TransactionControllerTest {
 
         List<Object> responseBody = objectMapper.readValue(mvcResult.getResponse().getContentAsString(), new TypeReference<>() {});
         assertEquals(transactions.size(), responseBody.size());
-        verify(transactionService, times(1)).getTransactionHistory(walletId, "amount", "DESC", "DEPOSIT");
+        verify(transactionService, times(1)).getTransactionHistory(userId, walletId, "amount", "DESC", "DEPOSIT");
     }
 
     @Test
@@ -243,8 +225,7 @@ class TransactionControllerTest {
         transactions.add(new IntraTransaction(new Wallet(), TransactionType.DEPOSIT, 200.0));
         transactions.add(new IntraTransaction(new Wallet(), TransactionType.WITHDRAWAL, 100.0));
 
-        when(walletService.isUserAuthorized(userId, walletId)).thenReturn(true);
-        when(transactionService.getTransactionHistory(walletId, "amount", "DESC", null)).thenReturn(transactions);
+        when(transactionService.getTransactionHistory(userId, walletId, "amount", "DESC", null)).thenReturn(transactions);
 
         MvcResult mvcResult = mockMvc.perform(MockMvcRequestBuilders.get("/users/{userId}/wallets/{walletId}/transactions?sortBy=amount&sortOrder=DESC", userId, walletId))
                 .andExpect(status().isOk())
@@ -252,7 +233,7 @@ class TransactionControllerTest {
 
         List<Object> responseBody = objectMapper.readValue(mvcResult.getResponse().getContentAsString(), new TypeReference<>() {});
         assertEquals(transactions.size(), responseBody.size());
-        verify(transactionService, times(1)).getTransactionHistory(walletId, "amount", "DESC", null);
+        verify(transactionService, times(1)).getTransactionHistory(userId, walletId, "amount", "DESC", null);
     }
 
     @Test
@@ -261,8 +242,7 @@ class TransactionControllerTest {
         transactions.add(new IntraTransaction(new Wallet(), TransactionType.DEPOSIT, 200.0));
         transactions.add(new IntraTransaction(new Wallet(), TransactionType.WITHDRAWAL, 100.0));
 
-        when(walletService.isUserAuthorized(userId, walletId)).thenReturn(true);
-        when(transactionService.getTransactionHistory(walletId, "amount,timestamp", "DESC,DESC", null)).thenReturn(transactions);
+        when(transactionService.getTransactionHistory(userId, walletId, "amount,timestamp", "DESC,DESC", null)).thenReturn(transactions);
 
         MvcResult mvcResult = mockMvc.perform(MockMvcRequestBuilders.get("/users/{userId}/wallets/{walletId}/transactions?sortBy=amount,timestamp&sortOrder=DESC,DESC", userId, walletId))
                 .andExpect(status().isOk())
@@ -270,31 +250,29 @@ class TransactionControllerTest {
 
         List<Object> responseBody = objectMapper.readValue(mvcResult.getResponse().getContentAsString(), new TypeReference<>() {});
         assertEquals(transactions.size(), responseBody.size());
-        verify(transactionService, times(1)).getTransactionHistory(walletId, "amount,timestamp", "DESC,DESC", null);
+        verify(transactionService, times(1)).getTransactionHistory(userId, walletId, "amount,timestamp", "DESC,DESC", null);
     }
 
     @Test
     void testGetTransactionHistoryWhenSortByInvalidField() throws Exception {
-        when(walletService.isUserAuthorized(userId, walletId)).thenReturn(true);
-        when(transactionService.getTransactionHistory(walletId, "amounts", "DESC", null)).thenThrow(new IllegalArgumentException("Invalid sort field: amounts"));
+        when(transactionService.getTransactionHistory(userId, walletId, "amounts", "DESC", null)).thenThrow(new IllegalArgumentException("Invalid sort field: amounts"));
 
         mockMvc.perform(MockMvcRequestBuilders.get("/users/{userId}/wallets/{walletId}/transactions?sortBy=amounts&sortOrder=DESC", userId, walletId))
                 .andExpect(status().isBadRequest())
                 .andExpect(content().string("Bad request: Invalid sort field: amounts"));
 
-        verify(transactionService, times(1)).getTransactionHistory(walletId, "amounts", "DESC", null);
+        verify(transactionService, times(1)).getTransactionHistory(userId, walletId, "amounts", "DESC", null);
     }
 
     @Test
     void testGetTransactionHistoryWhenSortOrderInvalid() throws Exception {
-        when(walletService.isUserAuthorized(userId, walletId)).thenReturn(true);
-        when(transactionService.getTransactionHistory(walletId, "amount", "DES", null)).thenThrow(new IllegalArgumentException("Invalid sort order: DES"));
+        when(transactionService.getTransactionHistory(userId, walletId, "amount", "DES", null)).thenThrow(new IllegalArgumentException("Invalid sort order: DES"));
 
         mockMvc.perform(MockMvcRequestBuilders.get("/users/{userId}/wallets/{walletId}/transactions?sortBy=amount&sortOrder=DES", userId, walletId))
                 .andExpect(status().isBadRequest())
                 .andExpect(content().string("Bad request: Invalid sort order: DES"));
 
-        verify(transactionService, times(1)).getTransactionHistory(walletId, "amount", "DES", null);
+        verify(transactionService, times(1)).getTransactionHistory(userId, walletId, "amount", "DES", null);
     }
 
     @Test
@@ -303,8 +281,7 @@ class TransactionControllerTest {
         transactions.add(new IntraTransaction(new Wallet(), TransactionType.DEPOSIT, 200.0));
         transactions.add(new IntraTransaction(new Wallet(), TransactionType.DEPOSIT, 100.0));
 
-        when(walletService.isUserAuthorized(userId, walletId)).thenReturn(true);
-        when(transactionService.getTransactionHistory(walletId, "amount,timestamp", "DESC", null)).thenReturn(transactions);
+        when(transactionService.getTransactionHistory(userId, walletId, "amount,timestamp", "DESC", null)).thenReturn(transactions);
 
         MvcResult mvcResult = mockMvc.perform(MockMvcRequestBuilders.get("/users/{userId}/wallets/{walletId}/transactions?sortBy=amount,timestamp&sortOrder=DESC", userId, walletId))
                 .andExpect(status().isOk())
@@ -312,19 +289,18 @@ class TransactionControllerTest {
 
         List<Object> responseBody = objectMapper.readValue(mvcResult.getResponse().getContentAsString(), new TypeReference<>() {});
         assertEquals(transactions.size(), responseBody.size());
-        verify(transactionService, times(1)).getTransactionHistory(walletId, "amount,timestamp", "DESC", null);
+        verify(transactionService, times(1)).getTransactionHistory(userId, walletId, "amount,timestamp", "DESC", null);
     }
 
     @Test
     void testGetTransactionHistoryWhenSortOrderLengthIsGreaterThanSortByLength() throws Exception {
-        when(walletService.isUserAuthorized(userId, walletId)).thenReturn(true);
-        when(transactionService.getTransactionHistory(walletId, "amount", "DESC,ASC", null)).thenThrow(new IllegalArgumentException("The number of sort fields must be greater than or equal to the number of sort orders"));
+        when(transactionService.getTransactionHistory(userId, walletId, "amount", "DESC,ASC", null)).thenThrow(new IllegalArgumentException("The number of sort fields must be greater than or equal to the number of sort orders"));
 
         mockMvc.perform(MockMvcRequestBuilders.get("/users/{userId}/wallets/{walletId}/transactions?sortBy=amount&sortOrder=DESC,ASC", userId, walletId))
                 .andExpect(status().isBadRequest())
                 .andExpect(content().string("Bad request: The number of sort fields must be greater than or equal to the number of sort orders"));
 
-        verify(transactionService, times(1)).getTransactionHistory(walletId, "amount", "DESC,ASC", null);
+        verify(transactionService, times(1)).getTransactionHistory(userId, walletId, "amount", "DESC,ASC", null);
     }
 
     @Test
@@ -333,8 +309,7 @@ class TransactionControllerTest {
         transactions.add(new IntraTransaction(new Wallet(), TransactionType.DEPOSIT, 200.0));
         transactions.add(new IntraTransaction(new Wallet(), TransactionType.WITHDRAWAL, 100.0));
 
-        when(walletService.isUserAuthorized(userId, walletId)).thenReturn(true);
-        when(transactionService.getTransactionHistory(walletId, "AMOUNT", "DESC", null)).thenReturn(transactions);
+        when(transactionService.getTransactionHistory(userId, walletId, "AMOUNT", "DESC", null)).thenReturn(transactions);
 
         MvcResult mvcResult = mockMvc.perform(MockMvcRequestBuilders.get("/users/{userId}/wallets/{walletId}/transactions?sortBy=AMOUNT&sortOrder=DESC", userId, walletId))
                 .andExpect(status().isOk())
@@ -342,7 +317,7 @@ class TransactionControllerTest {
 
         List<Object> responseBody = objectMapper.readValue(mvcResult.getResponse().getContentAsString(), new TypeReference<>() {});
         assertEquals(transactions.size(), responseBody.size());
-        verify(transactionService, times(1)).getTransactionHistory(walletId, "AMOUNT", "DESC", null);
+        verify(transactionService, times(1)).getTransactionHistory(userId, walletId, "AMOUNT", "DESC", null);
     }
 
     @Test
@@ -351,8 +326,7 @@ class TransactionControllerTest {
         transactions.add(new IntraTransaction(new Wallet(), TransactionType.DEPOSIT, 200.0));
         transactions.add(new IntraTransaction(new Wallet(), TransactionType.WITHDRAWAL, 100.0));
 
-        when(walletService.isUserAuthorized(userId, walletId)).thenReturn(true);
-        when(transactionService.getTransactionHistory(walletId, "amount", "desc", null)).thenReturn(transactions);
+        when(transactionService.getTransactionHistory(userId, walletId, "amount", "desc", null)).thenReturn(transactions);
 
         MvcResult mvcResult = mockMvc.perform(MockMvcRequestBuilders.get("/users/{userId}/wallets/{walletId}/transactions?sortBy=amount&sortOrder=desc", userId, walletId))
                 .andExpect(status().isOk())
@@ -360,7 +334,7 @@ class TransactionControllerTest {
 
         List<Object> responseBody = objectMapper.readValue(mvcResult.getResponse().getContentAsString(), new TypeReference<>() {});
         assertEquals(transactions.size(), responseBody.size());
-        verify(transactionService, times(1)).getTransactionHistory(walletId, "amount", "desc", null);
+        verify(transactionService, times(1)).getTransactionHistory(userId, walletId, "amount", "desc", null);
     }
 
     @Test
@@ -372,8 +346,7 @@ class TransactionControllerTest {
         transactions.add(new IntraTransaction(new Wallet(), TransactionType.DEPOSIT, 200.0));
         transactions.add(new InterTransaction(new Wallet(), new Wallet(), TransactionType.TRANSFER, 100.0));
 
-        when(walletService.isUserAuthorized(userId, walletId)).thenReturn(true);
-        when(transactionService.getTransactionHistory(walletId, null, null, "DEPOSIT,TRANSFER")).thenReturn(transactions);
+        when(transactionService.getTransactionHistory(userId, walletId, null, null, "DEPOSIT,TRANSFER")).thenReturn(transactions);
 
         MvcResult mvcResult = mockMvc.perform(MockMvcRequestBuilders.get("/users/{userId}/wallets/{walletId}/transactions?transactionType=DEPOSIT,TRANSFER", userId, walletId))
                 .andExpect(status().isOk())
@@ -381,7 +354,7 @@ class TransactionControllerTest {
 
         List<Object> responseBody = objectMapper.readValue(mvcResult.getResponse().getContentAsString(), new TypeReference<>() {});
         assertEquals(transactions.size(), responseBody.size());
-        verify(transactionService, times(1)).getTransactionHistory(walletId, null, null, "DEPOSIT,TRANSFER");
+        verify(transactionService, times(1)).getTransactionHistory(userId, walletId, null, null, "DEPOSIT,TRANSFER");
 
     }
 
@@ -395,8 +368,7 @@ class TransactionControllerTest {
         transactions.add(new IntraTransaction(new Wallet(), TransactionType.WITHDRAWAL, 50.0));
         transactions.add(new InterTransaction(new Wallet(), new Wallet(), TransactionType.TRANSFER, 100.0));
 
-        when(walletService.isUserAuthorized(userId, walletId)).thenReturn(true);
-        when(transactionService.getTransactionHistory(walletId, null, null, "DEPOSIT,TRANSFER,WITHDRAWAL")).thenReturn(transactions);
+        when(transactionService.getTransactionHistory(userId, walletId, null, null, "DEPOSIT,TRANSFER,WITHDRAWAL")).thenReturn(transactions);
 
         MvcResult mvcResult = mockMvc.perform(MockMvcRequestBuilders.get("/users/{userId}/wallets/{walletId}/transactions?transactionType=DEPOSIT,TRANSFER,WITHDRAWAL", userId, walletId))
                 .andExpect(status().isOk())
@@ -404,7 +376,7 @@ class TransactionControllerTest {
 
         List<Object> responseBody = objectMapper.readValue(mvcResult.getResponse().getContentAsString(), new TypeReference<>() {});
         assertEquals(transactions.size(), responseBody.size());
-        verify(transactionService, times(1)).getTransactionHistory(walletId, null, null, "DEPOSIT,TRANSFER,WITHDRAWAL");
+        verify(transactionService, times(1)).getTransactionHistory(userId, walletId, null, null, "DEPOSIT,TRANSFER,WITHDRAWAL");
     }
 
     @Test
@@ -416,8 +388,7 @@ class TransactionControllerTest {
         transactions.add(new IntraTransaction(new Wallet(), TransactionType.DEPOSIT, 200.0));
         transactions.add(new InterTransaction(new Wallet(), new Wallet(), TransactionType.TRANSFER, 150.0));
 
-        when(walletService.isUserAuthorized(userId, walletId)).thenReturn(true);
-        when(transactionService.getTransactionHistory(walletId, null, null, "DEPOSIT,Transfer")).thenReturn(transactions);
+        when(transactionService.getTransactionHistory(userId, walletId, null, null, "DEPOSIT,Transfer")).thenReturn(transactions);
 
         MvcResult mvcResult = mockMvc.perform(MockMvcRequestBuilders.get("/users/{userId}/wallets/{walletId}/transactions?transactionType=DEPOSIT,Transfer", userId, walletId))
                 .andExpect(status().isOk())
@@ -425,20 +396,19 @@ class TransactionControllerTest {
 
         List<Object> responseBody = objectMapper.readValue(mvcResult.getResponse().getContentAsString(), new TypeReference<>() {});
         assertEquals(3, responseBody.size());
-        verify(transactionService, times(1)).getTransactionHistory(walletId, null, null, "DEPOSIT,Transfer");
+        verify(transactionService, times(1)).getTransactionHistory(userId, walletId, null, null, "DEPOSIT,Transfer");
     }
 
     @Test
     void testGetTransactionHistoryWithTransferTypeInvalid() throws Exception {
         Long walletId = 2L;
 
-        when(walletService.isUserAuthorized(userId, walletId)).thenReturn(true);
-        when(transactionService.getTransactionHistory(walletId, null, null, "DEPOSIT,Transf")).thenThrow(new IllegalArgumentException("Invalid transaction type: Transf"));
+        when(transactionService.getTransactionHistory(userId, walletId, null, null, "DEPOSIT,Transf")).thenThrow(new IllegalArgumentException("Invalid transaction type: Transf"));
 
         mockMvc.perform(MockMvcRequestBuilders.get("/users/{userId}/wallets/{walletId}/transactions?transactionType=DEPOSIT,Transf", userId, walletId))
                 .andExpect(status().isBadRequest())
                 .andExpect(content().string("Bad request: Invalid transaction type: Transf"));
 
-        verify(transactionService, times(1)).getTransactionHistory(walletId, null, null, "DEPOSIT,Transf");
+        verify(transactionService, times(1)).getTransactionHistory(userId, walletId, null, null, "DEPOSIT,Transf");
     }
 }

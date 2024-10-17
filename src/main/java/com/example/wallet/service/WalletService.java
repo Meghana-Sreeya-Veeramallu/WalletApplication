@@ -1,6 +1,7 @@
 package com.example.wallet.service;
 
 import com.example.wallet.Enums.TransactionType;
+import com.example.wallet.Exceptions.UserNotAuthorizedException;
 import com.example.wallet.Exceptions.UserNotFoundException;
 import com.example.wallet.model.InterTransaction;
 import com.example.wallet.model.IntraTransaction;
@@ -32,7 +33,11 @@ public class WalletService {
     }
 
     @Transactional
-    public Double deposit(Long walletId, Double amount) {
+    public Double deposit(Long userId, Long walletId, Double amount) {
+        if (!isUserAuthorized(userId, walletId)) {
+            throw new UserNotAuthorizedException("Access denied: User is not authorized");
+        }
+
         Wallet wallet = walletRepository.findById(walletId).orElseThrow(() -> new UserNotFoundException("User not found"));;
         Double newBalance = wallet.deposit(amount);
         walletRepository.save(wallet);
@@ -44,7 +49,11 @@ public class WalletService {
     }
 
     @Transactional
-    public Double withdraw(Long walletId, Double amount) {
+    public Double withdraw(Long userId, Long walletId, Double amount) {
+        if (!isUserAuthorized(userId, walletId)) {
+            throw new UserNotAuthorizedException("Access denied: User is not authorized");
+        }
+
         Wallet wallet = walletRepository.findById(walletId).orElseThrow(() -> new UserNotFoundException("User not found"));;
         Double newBalance = wallet.withdraw(amount);
         walletRepository.save(wallet);
@@ -56,7 +65,10 @@ public class WalletService {
     }
 
     @Transactional
-    public Double transfer(Long senderWalletId, Long recipientWalletId, Double amount) {
+    public Double transfer(Long userId, Long senderWalletId, Long recipientWalletId, Double amount) {
+        if (!isUserAuthorized(userId, senderWalletId)) {
+            throw new UserNotAuthorizedException("Access denied: User is not authorized");
+        }
         Wallet senderWallet = walletRepository.findById(senderWalletId)
                 .orElseThrow(() -> new UserNotFoundException("Sender not found"));
         Wallet recipientWallet = walletRepository.findById(recipientWalletId)

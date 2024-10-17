@@ -1,9 +1,7 @@
 package com.example.wallet.controller;
 
-import com.example.wallet.Enums.TransactionType;
 import com.example.wallet.Exceptions.*;
 import com.example.wallet.service.TransactionService;
-import com.example.wallet.service.WalletService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -16,12 +14,10 @@ import java.util.List;
 @RequestMapping("/users/{userId}/wallets")
 public class TransactionController {
     private final TransactionService transactionService;
-    private final WalletService walletService;
 
     @Autowired
-    public TransactionController (TransactionService transactionService, WalletService walletService) {
+    public TransactionController (TransactionService transactionService) {
         this.transactionService = transactionService;
-        this.walletService = walletService;
     }
 
     @GetMapping("/{walletId}/transactions")
@@ -31,11 +27,10 @@ public class TransactionController {
                                                    @RequestParam(required = false) String sortOrder,
                                                    @RequestParam(required = false) String transactionType) {
         try {
-            if (!walletService.isUserAuthorized(userId, walletId)) {
-                return ResponseEntity.status(HttpStatus.FORBIDDEN).body("Access denied: User is not authorized");
-            }
-            List<Object> transactions = transactionService.getTransactionHistory(walletId, sortBy, sortOrder, transactionType);
+            List<Object> transactions = transactionService.getTransactionHistory(userId, walletId, sortBy, sortOrder, transactionType);
             return ResponseEntity.ok(transactions);
+        } catch (UserNotAuthorizedException e) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).body("Access denied: User is not authorized");
         } catch (UserNotFoundException e) {
             return ResponseEntity.status(HttpStatus.NOT_FOUND).body("User not found");
         } catch (IllegalArgumentException e) {

@@ -1,10 +1,13 @@
 package com.example.wallet.service;
 
 import com.example.wallet.Enums.TransactionType;
+import com.example.wallet.Exceptions.UserNotAuthorizedException;
 import com.example.wallet.model.InterTransaction;
 import com.example.wallet.model.IntraTransaction;
 import com.example.wallet.repository.InterTransactionRepository;
 import com.example.wallet.repository.IntraTransactionRepository;
+import com.example.wallet.repository.UserRepository;
+import com.example.wallet.repository.WalletRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -18,15 +21,21 @@ import java.util.stream.Collectors;
 public class TransactionService {
     private final IntraTransactionRepository intraTransactionRepository;
     private final InterTransactionRepository interTransactionRepository;
+    private final WalletService walletService;
 
     @Autowired
-    public TransactionService(IntraTransactionRepository intraTransactionRepository, InterTransactionRepository interTransactionRepository) {
+    public TransactionService(IntraTransactionRepository intraTransactionRepository, InterTransactionRepository interTransactionRepository, WalletService walletService) {
         this.intraTransactionRepository = intraTransactionRepository;
         this.interTransactionRepository = interTransactionRepository;
+        this.walletService = walletService;
     }
 
     @Transactional(readOnly = true)
-    public List<Object> getTransactionHistory(Long walletId, String sortBy, String sortOrder, String transactionType) {
+    public List<Object> getTransactionHistory(Long userId, Long walletId, String sortBy, String sortOrder, String transactionType) {
+        if (!walletService.isUserAuthorized(userId, walletId)) {
+            throw new UserNotAuthorizedException("Access denied: User is not authorized");
+        }
+
         List<String> sortOrderList = sortOrder != null ? Arrays.asList(sortOrder.split(",")) : Collections.emptyList();
         List<String> sortByList = sortBy != null ? Arrays.asList(sortBy.split(",")) : Collections.emptyList();
         List<String> transactionTypeList = transactionType != null ? Arrays.asList(transactionType.split(",")) : Collections.emptyList();

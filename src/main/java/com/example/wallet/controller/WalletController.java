@@ -25,12 +25,11 @@ public class WalletController {
     @PreAuthorize("isAuthenticated()")
     public ResponseEntity<?> deposit(@PathVariable Long userId, @PathVariable Long walletId, @RequestBody @Valid WalletDto request) {
         try {
-            if (!walletService.isUserAuthorized(userId, walletId)) {
-                return ResponseEntity.status(HttpStatus.FORBIDDEN).body("Access denied: User is not authorized");
-            }
-            walletService.deposit(walletId, request.getAmount());
+            walletService.deposit(userId, walletId, request.getAmount());
             String successMessage = "Amount deposited successfully: " + request.getAmount();
             return ResponseEntity.ok(successMessage);
+        } catch (UserNotAuthorizedException e) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).body("Access denied: User is not authorized");
         } catch (UserNotFoundException e) {
             return ResponseEntity.status(HttpStatus.NOT_FOUND).body("User not found");
         } catch (DepositAmountMustBePositiveException e) {
@@ -44,12 +43,11 @@ public class WalletController {
     @PreAuthorize("isAuthenticated()")
     public ResponseEntity<?> withdraw(@PathVariable Long userId, @PathVariable Long walletId, @RequestBody @Valid WalletDto request) {
         try {
-            if (!walletService.isUserAuthorized(userId, walletId)) {
-                return ResponseEntity.status(HttpStatus.FORBIDDEN).body("Access denied: User is not authorized");
-            }
-            walletService.withdraw(walletId, request.getAmount());
+            walletService.withdraw(userId, walletId, request.getAmount());
             String successMessage = "Amount withdrawn successfully: " + request.getAmount();
             return ResponseEntity.ok(successMessage);
+        } catch (UserNotAuthorizedException e) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).body("Access denied: User is not authorized");
         } catch (UserNotFoundException e) {
             return ResponseEntity.status(HttpStatus.NOT_FOUND).body("User not found");
         } catch (WithdrawAmountMustBePositiveException | InsufficientFundsException e) {
@@ -64,12 +62,11 @@ public class WalletController {
     public ResponseEntity<?> transfer(@PathVariable Long userId, @PathVariable Long walletId,
                                       @RequestBody @Valid TransferDto request) {
         try {
-            if (!walletService.isUserAuthorized(userId, walletId)) {
-                return ResponseEntity.status(HttpStatus.FORBIDDEN).body("Access denied: User is not authorized");
-            }
-            walletService.transfer(walletId, request.getRecipientWalletId(), request.getAmount());
+            walletService.transfer(userId, walletId, request.getRecipientWalletId(), request.getAmount());
             String successMessage = "Amount transferred successfully: " + request.getAmount();
             return ResponseEntity.ok(successMessage);
+        } catch (UserNotAuthorizedException e) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).body("Access denied: User is not authorized");
         } catch (UserNotFoundException e) {
             return ResponseEntity.status(HttpStatus.NOT_FOUND).body("User not found");
         } catch (TransferAmountMustBePositiveException | InsufficientFundsException e) {

@@ -25,6 +25,7 @@ import org.springframework.security.core.context.SecurityContextHolder;
 import java.util.Optional;
 
 public class WalletServiceTest {
+    Long userId;
     Long walletId;
     Wallet wallet;
 
@@ -45,14 +46,24 @@ public class WalletServiceTest {
         MockitoAnnotations.openMocks(this);
         walletId = 1L;
         wallet = new Wallet();
+        userId = 10L;
+
+        Authentication authentication = mock(Authentication.class);
+        when(authentication.getName()).thenReturn("testUser");
+        SecurityContext securityContext = mock(SecurityContext.class);
+        when(securityContext.getAuthentication()).thenReturn(authentication);
+        SecurityContextHolder.setContext(securityContext);
     }
 
     @Test
     void testDeposit() {
         Double depositAmount = 100.0;
+        User user = new User("testUser", "password", CurrencyType.INR);
+        when(userRepository.findById(userId)).thenReturn(Optional.of(user));
+        when(walletRepository.findIdByUserId(userId)).thenReturn(Optional.of(walletId));
         when(walletRepository.findById(walletId)).thenReturn(Optional.of(wallet));
 
-        Double newBalance = walletService.deposit(walletId, depositAmount);
+        Double newBalance = walletService.deposit(userId, walletId, depositAmount);
 
         assertEquals(depositAmount, newBalance);
         verify(walletRepository, times(1)).findById(walletId);
@@ -62,35 +73,56 @@ public class WalletServiceTest {
     @Test
     void testDepositNegativeAmount() {
         Double depositAmount = -100.0;
+        User user = new User("testUser", "password", CurrencyType.INR);
+        when(userRepository.findById(userId)).thenReturn(Optional.of(user));
+        when(walletRepository.findIdByUserId(userId)).thenReturn(Optional.of(walletId));
         when(walletRepository.findById(walletId)).thenReturn(Optional.of(wallet));
 
         assertThrows(DepositAmountMustBePositiveException.class, () ->
-                walletService.deposit(walletId, depositAmount)
+                walletService.deposit(userId, walletId, depositAmount)
         );
         verify(walletRepository, times(1)).findById(walletId);
         verify(intraTransactionRepository, times(0)).save(any(IntraTransaction.class));
     }
 
     @Test
-    void testDepositWithInvalidWalletId() {
-        Long invalidWalletId = 2L;
+    void testDepositWhenUserNotFound() {
         Double depositAmount = 100.0;
+        when(userRepository.findById(userId)).thenReturn(Optional.empty());
         when(walletRepository.findById(walletId)).thenReturn(Optional.empty());
 
         assertThrows(UserNotFoundException.class, () ->
-            walletService.deposit(invalidWalletId, depositAmount)
+                walletService.deposit(userId, walletId, depositAmount)
         );
-        verify(walletRepository, times(1)).findById(invalidWalletId);
+        verify(userRepository, times(1)).findById(userId);
+        verify(walletRepository, times(0)).findById(walletId);
+        verify(intraTransactionRepository, times(0)).save(any(IntraTransaction.class));
+    }
+
+    @Test
+    void testDepositWhenWalletDoesNotBelongToUser() {
+        Long invalidWalletId = 2L;
+        Double depositAmount = 100.0;
+        User user = new User("testUser", "password", CurrencyType.INR);
+        when(userRepository.findById(userId)).thenReturn(Optional.of(user));
+        when(walletRepository.findIdByUserId(userId)).thenReturn(Optional.of(walletId));
+
+        assertThrows(UserNotAuthorizedException.class, () ->
+            walletService.deposit(userId, invalidWalletId, depositAmount)
+        );
         verify(intraTransactionRepository, times(0)).save(any(IntraTransaction.class));
     }
 
     @Test
     void testWithdrawWithSufficientFunds() {
         Double withdrawAmount = 50.0;
+        User user = new User("testUser", "password", CurrencyType.INR);
+        when(userRepository.findById(userId)).thenReturn(Optional.of(user));
+        when(walletRepository.findIdByUserId(userId)).thenReturn(Optional.of(walletId));
         when(walletRepository.findById(walletId)).thenReturn(Optional.of(wallet));
-        walletService.deposit(walletId, 100.0);
+        walletService.deposit(userId, walletId, 100.0);
 
-        Double newBalance = walletService.withdraw(walletId, withdrawAmount);
+        Double newBalance = walletService.withdraw(userId, walletId, withdrawAmount);
 
         assertEquals(50.0, newBalance);
         verify(walletRepository, times(2)).findById(walletId);
@@ -100,11 +132,14 @@ public class WalletServiceTest {
     @Test
     void testWithdrawNegativeAmount() {
         Double withdrawAmount = -150.0;
+        User user = new User("testUser", "password", CurrencyType.INR);
+        when(userRepository.findById(userId)).thenReturn(Optional.of(user));
+        when(walletRepository.findIdByUserId(userId)).thenReturn(Optional.of(walletId));
         when(walletRepository.findById(walletId)).thenReturn(Optional.of(wallet));
-        walletService.deposit(walletId, 100.0);
+        walletService.deposit(userId, walletId, 100.0);
 
         assertThrows(WithdrawAmountMustBePositiveException.class, () ->
-            walletService.withdraw(walletId, withdrawAmount)
+            walletService.withdraw(userId, walletId, withdrawAmount)
         );
         verify(walletRepository, times(2)).findById(walletId);
         verify(intraTransactionRepository, times(1)).save(any(IntraTransaction.class));
@@ -113,26 +148,44 @@ public class WalletServiceTest {
     @Test
     void testWithdrawWithInsufficientFunds() {
         Double withdrawAmount = 150.0;
+        User user = new User("testUser", "password", CurrencyType.INR);
+        when(userRepository.findById(userId)).thenReturn(Optional.of(user));
+        when(walletRepository.findIdByUserId(userId)).thenReturn(Optional.of(walletId));
         when(walletRepository.findById(walletId)).thenReturn(Optional.of(wallet));
-        walletService.deposit(walletId, 100.0);
+        walletService.deposit(userId, walletId, 100.0);
 
         assertThrows(InsufficientFundsException.class, () ->
-            walletService.withdraw(walletId, withdrawAmount)
+            walletService.withdraw(userId, walletId, withdrawAmount)
         );
         verify(walletRepository, times(2)).findById(walletId);
         verify(intraTransactionRepository, times(1)).save(any(IntraTransaction.class));
     }
 
     @Test
-    void testWithdrawWithInvalidWalletId() {
-        Long invalidWalletId = 2L;
-        Double withdrawAmount = 50.0;
-        when(walletRepository.findById(invalidWalletId)).thenReturn(Optional.empty());
+    void testWithdrawWhenUserNotFound() {
+        Double depositAmount = 100.0;
+        when(userRepository.findById(userId)).thenReturn(Optional.empty());
+        when(walletRepository.findById(walletId)).thenReturn(Optional.empty());
 
         assertThrows(UserNotFoundException.class, () ->
-            walletService.withdraw(invalidWalletId, withdrawAmount)
+                walletService.withdraw(userId, walletId, depositAmount)
         );
-        verify(walletRepository, times(1)).findById(invalidWalletId);
+        verify(userRepository, times(1)).findById(userId);
+        verify(walletRepository, times(0)).findById(walletId);
+        verify(intraTransactionRepository, times(0)).save(any(IntraTransaction.class));
+    }
+
+    @Test
+    void testWithdrawWhenWalletDoesNotBelongToUser() {
+        Long invalidWalletId = 2L;
+        Double depositAmount = 100.0;
+        User user = new User("testUser", "password", CurrencyType.INR);
+        when(userRepository.findById(userId)).thenReturn(Optional.of(user));
+        when(walletRepository.findIdByUserId(userId)).thenReturn(Optional.of(walletId));
+
+        assertThrows(UserNotAuthorizedException.class, () ->
+                walletService.withdraw(userId, invalidWalletId, depositAmount)
+        );
         verify(intraTransactionRepository, times(0)).save(any(IntraTransaction.class));
     }
 
@@ -141,14 +194,14 @@ public class WalletServiceTest {
         Long senderWalletId = 1L;
         Long recipientWalletId = 2L;
         Double transferAmount = 30.0;
-        Wallet senderWallet = new Wallet();
-        Wallet recipientWallet = new Wallet();
+        User user = new User("testUser", "password", CurrencyType.INR);
+        when(userRepository.findById(userId)).thenReturn(Optional.of(user));
+        when(walletRepository.findIdByUserId(userId)).thenReturn(Optional.of(walletId));
+        when(walletRepository.findById(senderWalletId)).thenReturn(Optional.of(new Wallet()));
+        when(walletRepository.findById(recipientWalletId)).thenReturn(Optional.of(new Wallet()));
 
-        when(walletRepository.findById(senderWalletId)).thenReturn(Optional.of(senderWallet));
-        when(walletRepository.findById(recipientWalletId)).thenReturn(Optional.of(recipientWallet));
-
-        walletService.deposit(senderWalletId, 100.0);
-        Double newBalance = walletService.transfer(senderWalletId, recipientWalletId, transferAmount);
+        walletService.deposit(userId, senderWalletId, 100.0);
+        Double newBalance = walletService.transfer(userId, senderWalletId, recipientWalletId, transferAmount);
 
         assertEquals(70.0, newBalance);
         verify(walletRepository, times(2)).findById(senderWalletId);
@@ -159,42 +212,63 @@ public class WalletServiceTest {
 
     @Test
     void testTransferUserNotFoundForSender() {
-        Long invalidsenderWalletId = 1L;
+        Long invalidSenderWalletId = 1L;
         Long recipientWalletId = 2L;
         Double transferAmount = 30.0;
-        Wallet recipientWallet = new Wallet();
 
-        when(walletRepository.findById(invalidsenderWalletId)).thenReturn(Optional.empty());
-        when(walletRepository.findById(recipientWalletId)).thenReturn(Optional.of(recipientWallet));
+        User user = new User("testUser", "password", CurrencyType.INR);
+        when(userRepository.findById(userId)).thenReturn(Optional.of(user));
+        when(walletRepository.findIdByUserId(userId)).thenReturn(Optional.of(walletId));
+        when(walletRepository.findById(invalidSenderWalletId)).thenReturn(Optional.empty());
+        when(walletRepository.findById(recipientWalletId)).thenReturn(Optional.of(new Wallet()));
 
         Exception exception = assertThrows(UserNotFoundException.class, () -> {
-            walletService.transfer(invalidsenderWalletId, recipientWalletId, transferAmount);
+            walletService.transfer(userId, invalidSenderWalletId, recipientWalletId, transferAmount);
         });
 
         assertEquals("Sender not found", exception.getMessage());
-        verify(walletRepository, times(1)).findById(invalidsenderWalletId);
+        verify(walletRepository, times(1)).findById(invalidSenderWalletId);
         verify(walletRepository, times(0)).findById(recipientWalletId);
         verify(interTransactionRepository, times(0)).save(any(InterTransaction.class));
     }
 
     @Test
+    void testTransferWalletDoesNotBelongToSender() {
+        Long senderWalletId = 1L;
+        Long invalidSenderWalletId = 15L;
+        Long recipientWalletId = 2L;
+        Double transferAmount = 30.0;
+
+        User user = new User("testUser", "password", CurrencyType.INR);
+        when(userRepository.findById(userId)).thenReturn(Optional.of(user));
+        when(walletRepository.findIdByUserId(userId)).thenReturn(Optional.of(senderWalletId));
+
+        assertThrows(UserNotAuthorizedException.class, () ->
+                walletService.transfer(userId, invalidSenderWalletId, recipientWalletId, transferAmount)
+        );
+        verify(intraTransactionRepository, times(0)).save(any(IntraTransaction.class));
+    }
+
+    @Test
     void testTransferUserNotFoundForRecipient() {
         Long senderWalletId = 1L;
-        Long invalidrecipientWalletId = 2L;
+        Long invalidRecipientWalletId = 2L;
         Double transferAmount = 30.0;
-        Wallet senderWallet = new Wallet();
 
-        when(walletRepository.findById(senderWalletId)).thenReturn(Optional.of(senderWallet));
-        when(walletRepository.findById(invalidrecipientWalletId)).thenReturn(Optional.empty());
+        User user = new User("testUser", "password", CurrencyType.INR);
+        when(userRepository.findById(userId)).thenReturn(Optional.of(user));
+        when(walletRepository.findIdByUserId(userId)).thenReturn(Optional.of(walletId));
+        when(walletRepository.findById(senderWalletId)).thenReturn(Optional.of(new Wallet()));
+        when(walletRepository.findById(invalidRecipientWalletId)).thenReturn(Optional.empty());
 
-        walletService.deposit(senderWalletId, 100.0);
+        walletService.deposit(userId, senderWalletId, 100.0);
         Exception exception = assertThrows(UserNotFoundException.class, () -> {
-            walletService.transfer(senderWalletId, invalidrecipientWalletId, transferAmount);
+            walletService.transfer(userId, senderWalletId, invalidRecipientWalletId, transferAmount);
         });
 
         assertEquals("Recipient not found", exception.getMessage());
         verify(walletRepository, times(2)).findById(senderWalletId);
-        verify(walletRepository, times(1)).findById(invalidrecipientWalletId);
+        verify(walletRepository, times(1)).findById(invalidRecipientWalletId);
         verify(intraTransactionRepository, times(1)).save(any(IntraTransaction.class));
         verify(interTransactionRepository, times(0)).save(any(InterTransaction.class));
     }
@@ -204,15 +278,16 @@ public class WalletServiceTest {
         Long senderWalletId = 1L;
         Long recipientWalletId = 2L;
         Double transferAmount = 130.0;
-        Wallet senderWallet = new Wallet();
-        Wallet recipientWallet = new Wallet();
 
-        when(walletRepository.findById(senderWalletId)).thenReturn(Optional.of(senderWallet));
-        when(walletRepository.findById(recipientWalletId)).thenReturn(Optional.of(recipientWallet));
+        User user = new User("testUser", "password", CurrencyType.INR);
+        when(userRepository.findById(userId)).thenReturn(Optional.of(user));
+        when(walletRepository.findIdByUserId(userId)).thenReturn(Optional.of(walletId));
+        when(walletRepository.findById(senderWalletId)).thenReturn(Optional.of(new Wallet()));
+        when(walletRepository.findById(recipientWalletId)).thenReturn(Optional.of(new Wallet()));
 
-        walletService.deposit(senderWalletId, 100.0);
+        walletService.deposit(userId, senderWalletId, 100.0);
         Exception exception = assertThrows(InsufficientFundsException.class, () -> {
-            walletService.transfer(senderWalletId, recipientWalletId, transferAmount);
+            walletService.transfer(userId, senderWalletId, recipientWalletId, transferAmount);
         });
 
         assertEquals("Insufficient funds for transfer", exception.getMessage());
@@ -227,15 +302,16 @@ public class WalletServiceTest {
         Long senderWalletId = 1L;
         Long recipientWalletId = 2L;
         Double transferAmount = -10.0;
-        Wallet senderWallet = new Wallet();
-        Wallet recipientWallet = new Wallet();
 
-        when(walletRepository.findById(senderWalletId)).thenReturn(Optional.of(senderWallet));
-        when(walletRepository.findById(recipientWalletId)).thenReturn(Optional.of(recipientWallet));
+        User user = new User("testUser", "password", CurrencyType.INR);
+        when(userRepository.findById(userId)).thenReturn(Optional.of(user));
+        when(walletRepository.findIdByUserId(userId)).thenReturn(Optional.of(walletId));
+        when(walletRepository.findById(senderWalletId)).thenReturn(Optional.of(new Wallet()));
+        when(walletRepository.findById(recipientWalletId)).thenReturn(Optional.of(new Wallet()));
 
-        walletService.deposit(senderWalletId, 100.0);
+        walletService.deposit(userId, senderWalletId, 100.0);
         Exception exception = assertThrows(TransferAmountMustBePositiveException.class, () -> {
-            walletService.transfer(senderWalletId, recipientWalletId, transferAmount);
+            walletService.transfer(userId, senderWalletId, recipientWalletId, transferAmount);
         });
 
         assertEquals("Transfer amount must be positive", exception.getMessage());
@@ -247,12 +323,6 @@ public class WalletServiceTest {
 
     @Test
     void testIsUserAuthorizedWhenUserOwnsWallet() {
-        Authentication authentication = mock(Authentication.class);
-        when(authentication.getName()).thenReturn("testUser");
-        SecurityContext securityContext = mock(SecurityContext.class);
-        when(securityContext.getAuthentication()).thenReturn(authentication);
-        SecurityContextHolder.setContext(securityContext);
-
         Long walletId = 1L;
         Long userId = 10L;
 
@@ -269,12 +339,6 @@ public class WalletServiceTest {
 
     @Test
     void testIsUserAuthorizedWhenUserDoesNotOwnWallet() {
-        Authentication authentication = mock(Authentication.class);
-        when(authentication.getName()).thenReturn("testUser");
-        SecurityContext securityContext = mock(SecurityContext.class);
-        when(securityContext.getAuthentication()).thenReturn(authentication);
-        SecurityContextHolder.setContext(securityContext);
-
         Long userId = 1L;
         Long walletId = 20L;
 
@@ -291,12 +355,6 @@ public class WalletServiceTest {
 
     @Test
     void testIsUserAuthorizedWhenUserNotFound() {
-        Authentication authentication = mock(Authentication.class);
-        when(authentication.getName()).thenReturn("testUser");
-        SecurityContext securityContext = mock(SecurityContext.class);
-        when(securityContext.getAuthentication()).thenReturn(authentication);
-        SecurityContextHolder.setContext(securityContext);
-
         Long userId = 1L;
         Long walletId = 10L;
 
