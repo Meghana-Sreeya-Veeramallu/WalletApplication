@@ -12,6 +12,7 @@ import org.springframework.transaction.annotation.Transactional;
 import java.time.LocalDateTime;
 import java.util.*;
 import java.util.function.Function;
+import java.util.stream.Collectors;
 
 @Service
 public class TransactionService {
@@ -25,17 +26,24 @@ public class TransactionService {
     }
 
     @Transactional(readOnly = true)
-    public List<Object> getTransactionHistory(Long walletId, String sortBy, String sortOrder, TransactionType transactionType) {
+    public List<Object> getTransactionHistory(Long walletId, String sortBy, String sortOrder, String transactionType) {
         List<String> sortOrderList = sortOrder != null ? Arrays.asList(sortOrder.split(",")) : Collections.emptyList();
         List<String> sortByList = sortBy != null ? Arrays.asList(sortBy.split(",")) : Collections.emptyList();
-        validateSortParameters(sortByList, sortOrderList);
+        List<String> transactionTypeList = transactionType != null ? Arrays.asList(transactionType.split(",")) : Collections.emptyList();
+        validateSortParameters(sortByList, sortOrderList, transactionTypeList);
 
-        List<IntraTransaction> intraTransactions = intraTransactionRepository.findByWalletIdAndTransactionType(walletId, transactionType);
-        List<InterTransaction> interTransactions = interTransactionRepository.findByWalletIdAndTransactionType(walletId, transactionType);
+        List<IntraTransaction> intraTransactions = intraTransactionRepository.findByWalletId(walletId);
+        List<InterTransaction> interTransactions = interTransactionRepository.findByWalletId(walletId);
 
         List<Object> allTransactions = new ArrayList<>();
         allTransactions.addAll(intraTransactions);
         allTransactions.addAll(interTransactions);
+
+        if (transactionType != null) {
+            allTransactions = allTransactions.stream()
+                    .filter(transaction -> transactionTypeList.contains(getTransactionType(transaction)))
+                    .collect(Collectors.toList());
+        }
 
         Comparator<Object> comparator = getComparatorObject(sortOrderList, sortByList);
 
@@ -43,13 +51,12 @@ public class TransactionService {
         return allTransactions;
     }
 
-    private void validateSortParameters(List<String> sortByList, List<String> sortOrderList) {
+    private void validateSortParameters(List<String> sortByList, List<String> sortOrderList, List<String> transactionTypeList) {
         if (sortByList.size() < sortOrderList.size()) {
             throw new IllegalArgumentException("The number of sort fields must be greater than or equal to the number of sort orders");
         }
 
         List<String> validSortFields = Arrays.asList("timestamp", "amount");
-
         for (String field : sortByList) {
             if (!validSortFields.contains(field.toLowerCase())) {
                 throw new IllegalArgumentException("Invalid sort field: " + field);
@@ -57,11 +64,25 @@ public class TransactionService {
         }
 
         List<String> validSortOrders = Arrays.asList("ASC", "DESC");
-
         for (String order : sortOrderList) {
             if (!validSortOrders.contains(order.toUpperCase())) {
                 throw new IllegalArgumentException("Invalid sort order: " + order);
             }
+        }
+
+        List<String> validTransactionTypes = Arrays.asList("WITHDRAWAL", "TRANSFER", "DEPOSIT");
+        for (String type : transactionTypeList) {
+            if (!validTransactionTypes.contains(type.toUpperCase())) {
+                throw new IllegalArgumentException("Invalid transaction type: " + type);
+            }
+        }
+    }
+
+    private String getTransactionType(Object transaction) {
+        if (transaction instanceof IntraTransaction) {
+            return ((IntraTransaction) transaction).getType().name();
+        } else {
+            return ((InterTransaction) transaction).getType().name();
         }
     }
 
@@ -101,9 +122,8 @@ public class TransactionService {
     private <T> T getTransactionValue(Object transaction, Function<IntraTransaction, T> intraMapper, Function<InterTransaction, T> interMapper) {
         if (transaction instanceof IntraTransaction) {
             return intraMapper.apply((IntraTransaction) transaction);
-        } else if (transaction instanceof InterTransaction) {
+        } else {
             return interMapper.apply((InterTransaction) transaction);
         }
-        throw new IllegalArgumentException("Unknown transaction type");
     }
 }

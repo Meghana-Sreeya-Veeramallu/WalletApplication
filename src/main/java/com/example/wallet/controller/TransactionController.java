@@ -29,7 +29,7 @@ public class TransactionController {
     public ResponseEntity<?> getTransactionHistory(@PathVariable Long userId, @PathVariable Long walletId,
                                                    @RequestParam(required = false) String sortBy,
                                                    @RequestParam(required = false) String sortOrder,
-                                                   @RequestParam(required = false) TransactionType transactionType) {
+                                                   @RequestParam(required = false) String transactionType) {
         try {
             if (!walletService.isUserAuthorized(userId, walletId)) {
                 return ResponseEntity.status(HttpStatus.FORBIDDEN).body("Access denied: User is not authorized");

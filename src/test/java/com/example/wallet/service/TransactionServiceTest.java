@@ -40,8 +40,8 @@ public class TransactionServiceTest {
         List<IntraTransaction> intraTransactions = new ArrayList<>();
         intraTransactions.add(new IntraTransaction(new Wallet(), TransactionType.DEPOSIT, 100.0));
 
-        when(intraTransactionRepository.findByWalletIdAndTransactionType(walletId, null)).thenReturn(intraTransactions);
-        when(interTransactionRepository.findByWalletIdAndTransactionType(walletId, null)).thenReturn(new ArrayList<>());
+        when(intraTransactionRepository.findByWalletId(walletId)).thenReturn(intraTransactions);
+        when(interTransactionRepository.findByWalletId(walletId)).thenReturn(new ArrayList<>());
 
         List<Object> result = transactionService.getTransactionHistory(walletId, null, null, null);
 
@@ -55,8 +55,8 @@ public class TransactionServiceTest {
         List<InterTransaction> interTransactions = new ArrayList<>();
         interTransactions.add(new InterTransaction(new Wallet(), new Wallet(), TransactionType.TRANSFER, 100.0));
 
-        when(intraTransactionRepository.findByWalletIdAndTransactionType(walletId, null)).thenReturn(new ArrayList<>());
-        when(interTransactionRepository.findByWalletIdAndTransactionType(walletId, null)).thenReturn(interTransactions);
+        when(intraTransactionRepository.findByWalletId(walletId)).thenReturn(new ArrayList<>());
+        when(interTransactionRepository.findByWalletId(walletId)).thenReturn(interTransactions);
 
         List<Object> result = transactionService.getTransactionHistory(walletId, null, null, null);
 
@@ -75,8 +75,8 @@ public class TransactionServiceTest {
         interTransactions.add(new InterTransaction(new Wallet(), new Wallet(), TransactionType.TRANSFER, 100.0));
         interTransactions.add(new InterTransaction(new Wallet(), new Wallet(), TransactionType.TRANSFER, 150.0));
 
-        when(intraTransactionRepository.findByWalletIdAndTransactionType(walletId, null)).thenReturn(intraTransactions);
-        when(interTransactionRepository.findByWalletIdAndTransactionType(walletId, null)).thenReturn(interTransactions);
+        when(intraTransactionRepository.findByWalletId(walletId)).thenReturn(intraTransactions);
+        when(interTransactionRepository.findByWalletId(walletId)).thenReturn(interTransactions);
 
         List<Object> result = transactionService.getTransactionHistory(walletId, null, null, null);
 
@@ -87,8 +87,8 @@ public class TransactionServiceTest {
     void testGetTransactionHistoryWithNoTransactions() {
         Long walletId = 3L;
 
-        when(intraTransactionRepository.findByWalletIdAndTransactionType(walletId, null)).thenReturn(new ArrayList<>());
-        when(interTransactionRepository.findByWalletIdAndTransactionType(walletId, null)).thenReturn(new ArrayList<>());
+        when(intraTransactionRepository.findByWalletId(walletId)).thenReturn(new ArrayList<>());
+        when(interTransactionRepository.findByWalletId(walletId)).thenReturn(new ArrayList<>());
 
         List<Object> result = transactionService.getTransactionHistory(walletId, null, null, null);
 
@@ -97,7 +97,7 @@ public class TransactionServiceTest {
     }
 
     @Test
-    void testGetTransactionHistoryWithSortAscending() {
+    void testGetTransactionHistoryWithSortTimestampAscending() {
         Long walletId = 2L;
 
         List<IntraTransaction> intraTransactions = new ArrayList<>();
@@ -108,8 +108,8 @@ public class TransactionServiceTest {
         interTransactions.add(new InterTransaction(new Wallet(), new Wallet(), TransactionType.TRANSFER, 100.0));
         interTransactions.add(new InterTransaction(new Wallet(), new Wallet(), TransactionType.TRANSFER, 150.0));
 
-        when(intraTransactionRepository.findByWalletIdAndTransactionType(walletId, null)).thenReturn(intraTransactions);
-        when(interTransactionRepository.findByWalletIdAndTransactionType(walletId, null)).thenReturn(interTransactions);
+        when(intraTransactionRepository.findByWalletId(walletId)).thenReturn(intraTransactions);
+        when(interTransactionRepository.findByWalletId(walletId)).thenReturn(interTransactions);
 
         List<Object> result = transactionService.getTransactionHistory(walletId, "timestamp",  "ASC", null);
 
@@ -117,7 +117,7 @@ public class TransactionServiceTest {
     }
 
     @Test
-    void testGetTransactionHistoryWithSortDescending() {
+    void testGetTransactionHistoryWithSortTimestampDescending() {
         Long walletId = 2L;
 
         List<IntraTransaction> intraTransactions = new ArrayList<>();
@@ -128,8 +128,8 @@ public class TransactionServiceTest {
         interTransactions.add(new InterTransaction(new Wallet(), new Wallet(), TransactionType.TRANSFER, 100.0));
         interTransactions.add(new InterTransaction(new Wallet(), new Wallet(), TransactionType.TRANSFER, 150.0));
 
-        when(intraTransactionRepository.findByWalletIdAndTransactionType(walletId, null)).thenReturn(intraTransactions);
-        when(interTransactionRepository.findByWalletIdAndTransactionType(walletId, null)).thenReturn(interTransactions);
+        when(intraTransactionRepository.findByWalletId(walletId)).thenReturn(intraTransactions);
+        when(interTransactionRepository.findByWalletId(walletId)).thenReturn(interTransactions);
 
         List<Object> result = transactionService.getTransactionHistory(walletId, "timestamp",  "DESC", null);
 
@@ -143,14 +143,14 @@ public class TransactionServiceTest {
         List<IntraTransaction> intraTransactions = new ArrayList<>();
         intraTransactions.add(new IntraTransaction(new Wallet(), TransactionType.DEPOSIT, 100.0));
 
-        when(intraTransactionRepository.findByWalletIdAndTransactionType(walletId, TransactionType.DEPOSIT)).thenReturn(intraTransactions);
-        when(interTransactionRepository.findByWalletIdAndTransactionType(walletId, TransactionType.DEPOSIT)).thenReturn(new ArrayList<>());
+        when(intraTransactionRepository.findByWalletId(walletId)).thenReturn(intraTransactions);
+        when(interTransactionRepository.findByWalletId(walletId)).thenReturn(new ArrayList<>());
 
-        List<Object> result = transactionService.getTransactionHistory(walletId, null, null, TransactionType.DEPOSIT);
+        List<Object> result = transactionService.getTransactionHistory(walletId, null, null, "DEPOSIT");
 
         assertEquals(1, result.size());
-        verify(intraTransactionRepository, times(1)).findByWalletIdAndTransactionType(walletId, TransactionType.DEPOSIT);
-        verify(interTransactionRepository, times(1)).findByWalletIdAndTransactionType(walletId, TransactionType.DEPOSIT);
+        verify(intraTransactionRepository, times(1)).findByWalletId(walletId);
+        verify(interTransactionRepository, times(1)).findByWalletId(walletId);
     }
 
     @Test
@@ -160,14 +160,14 @@ public class TransactionServiceTest {
         List<IntraTransaction> intraTransactions = new ArrayList<>();
         intraTransactions.add(new IntraTransaction(new Wallet(), TransactionType.WITHDRAWAL, 100.0));
 
-        when(intraTransactionRepository.findByWalletIdAndTransactionType(walletId, TransactionType.WITHDRAWAL)).thenReturn(intraTransactions);
-        when(interTransactionRepository.findByWalletIdAndTransactionType(walletId, TransactionType.WITHDRAWAL)).thenReturn(new ArrayList<>());
+        when(intraTransactionRepository.findByWalletId(walletId)).thenReturn(intraTransactions);
+        when(interTransactionRepository.findByWalletId(walletId)).thenReturn(new ArrayList<>());
 
-        List<Object> result = transactionService.getTransactionHistory(walletId, null, null, TransactionType.WITHDRAWAL);
+        List<Object> result = transactionService.getTransactionHistory(walletId, null, null, "WITHDRAWAL");
 
         assertEquals(1, result.size());
-        verify(intraTransactionRepository, times(1)).findByWalletIdAndTransactionType(walletId, TransactionType.WITHDRAWAL);
-        verify(interTransactionRepository, times(1)).findByWalletIdAndTransactionType(walletId, TransactionType.WITHDRAWAL);
+        verify(intraTransactionRepository, times(1)).findByWalletId(walletId);
+        verify(interTransactionRepository, times(1)).findByWalletId(walletId);
     }
 
     @Test
@@ -177,14 +177,14 @@ public class TransactionServiceTest {
         List<InterTransaction> interTransactions = new ArrayList<>();
         interTransactions.add(new InterTransaction(new Wallet(), new Wallet(), TransactionType.TRANSFER, 100.0));
 
-        when(intraTransactionRepository.findByWalletIdAndTransactionType(walletId, TransactionType.TRANSFER)).thenReturn(new ArrayList<>());
-        when(interTransactionRepository.findByWalletIdAndTransactionType(walletId, TransactionType.TRANSFER)).thenReturn(interTransactions);
+        when(intraTransactionRepository.findByWalletId(walletId)).thenReturn(new ArrayList<>());
+        when(interTransactionRepository.findByWalletId(walletId)).thenReturn(interTransactions);
 
-        List<Object> result = transactionService.getTransactionHistory(walletId, null, null, TransactionType.TRANSFER);
+        List<Object> result = transactionService.getTransactionHistory(walletId, null, null, "TRANSFER");
 
         assertEquals(1, result.size());
-        verify(intraTransactionRepository, times(1)).findByWalletIdAndTransactionType(walletId, TransactionType.TRANSFER);
-        verify(interTransactionRepository, times(1)).findByWalletIdAndTransactionType(walletId, TransactionType.TRANSFER);
+        verify(intraTransactionRepository, times(1)).findByWalletId(walletId);
+        verify(interTransactionRepository, times(1)).findByWalletId(walletId);
     }
 
     @Test
@@ -195,14 +195,14 @@ public class TransactionServiceTest {
         interTransactions.add(new InterTransaction(new Wallet(), new Wallet(), TransactionType.TRANSFER, 100.0));
         interTransactions.add(new InterTransaction(new Wallet(), new Wallet(), TransactionType.TRANSFER, 200.0));
 
-        when(intraTransactionRepository.findByWalletIdAndTransactionType(walletId, TransactionType.TRANSFER)).thenReturn(new ArrayList<>());
-        when(interTransactionRepository.findByWalletIdAndTransactionType(walletId, TransactionType.TRANSFER)).thenReturn(interTransactions);
+        when(intraTransactionRepository.findByWalletId(walletId)).thenReturn(new ArrayList<>());
+        when(interTransactionRepository.findByWalletId(walletId)).thenReturn(interTransactions);
 
-        List<Object> result = transactionService.getTransactionHistory(walletId, "timestamp",  "ASC", TransactionType.TRANSFER);
+        List<Object> result = transactionService.getTransactionHistory(walletId, "timestamp",  "ASC", "TRANSFER");
 
         assertEquals(2, result.size());
-        verify(intraTransactionRepository, times(1)).findByWalletIdAndTransactionType(walletId, TransactionType.TRANSFER);
-        verify(interTransactionRepository, times(1)).findByWalletIdAndTransactionType(walletId, TransactionType.TRANSFER);
+        verify(intraTransactionRepository, times(1)).findByWalletId(walletId);
+        verify(interTransactionRepository, times(1)).findByWalletId(walletId);
     }
 
     @Test
@@ -213,14 +213,14 @@ public class TransactionServiceTest {
         intraTransactions.add(new IntraTransaction(new Wallet(), TransactionType.DEPOSIT, 200.0));
         intraTransactions.add(new IntraTransaction(new Wallet(), TransactionType.DEPOSIT, 100.0));
 
-        when(intraTransactionRepository.findByWalletIdAndTransactionType(walletId, TransactionType.DEPOSIT)).thenReturn(intraTransactions);
-        when(interTransactionRepository.findByWalletIdAndTransactionType(walletId, TransactionType.DEPOSIT)).thenReturn(new ArrayList<>());
+        when(intraTransactionRepository.findByWalletId(walletId)).thenReturn(intraTransactions);
+        when(interTransactionRepository.findByWalletId(walletId)).thenReturn(new ArrayList<>());
 
-        List<Object> result = transactionService.getTransactionHistory(walletId, "timestamp",  "DESC", TransactionType.DEPOSIT);
+        List<Object> result = transactionService.getTransactionHistory(walletId, "timestamp",  "DESC", "DEPOSIT");
 
         assertEquals(2, result.size());
-        verify(intraTransactionRepository, times(1)).findByWalletIdAndTransactionType(walletId, TransactionType.DEPOSIT);
-        verify(interTransactionRepository, times(1)).findByWalletIdAndTransactionType(walletId, TransactionType.DEPOSIT);
+        verify(intraTransactionRepository, times(1)).findByWalletId(walletId);
+        verify(interTransactionRepository, times(1)).findByWalletId(walletId);
     }
 
     @Test
@@ -231,14 +231,14 @@ public class TransactionServiceTest {
         intraTransactions.add(new IntraTransaction(new Wallet(), TransactionType.DEPOSIT, 200.0));
         intraTransactions.add(new IntraTransaction(new Wallet(), TransactionType.DEPOSIT, 100.0));
 
-        when(intraTransactionRepository.findByWalletIdAndTransactionType(walletId, null)).thenReturn(intraTransactions);
-        when(interTransactionRepository.findByWalletIdAndTransactionType(walletId, null)).thenReturn(new ArrayList<>());
+        when(intraTransactionRepository.findByWalletId(walletId)).thenReturn(intraTransactions);
+        when(interTransactionRepository.findByWalletId(walletId)).thenReturn(new ArrayList<>());
 
         List<Object> result = transactionService.getTransactionHistory(walletId, "amount", "DESC", null);
         assertEquals(2, result.size());
 
-        verify(intraTransactionRepository, times(1)).findByWalletIdAndTransactionType(walletId, null);
-        verify(interTransactionRepository, times(1)).findByWalletIdAndTransactionType(walletId, null);
+        verify(intraTransactionRepository, times(1)).findByWalletId(walletId);
+        verify(interTransactionRepository, times(1)).findByWalletId(walletId);
     }
 
     @Test
@@ -249,14 +249,14 @@ public class TransactionServiceTest {
         intraTransactions.add(new IntraTransaction(new Wallet(), TransactionType.DEPOSIT, 200.0));
         intraTransactions.add(new IntraTransaction(new Wallet(), TransactionType.DEPOSIT, 100.0));
 
-        when(intraTransactionRepository.findByWalletIdAndTransactionType(walletId, null)).thenReturn(intraTransactions);
-        when(interTransactionRepository.findByWalletIdAndTransactionType(walletId, null)).thenReturn(new ArrayList<>());
+        when(intraTransactionRepository.findByWalletId(walletId)).thenReturn(intraTransactions);
+        when(interTransactionRepository.findByWalletId(walletId)).thenReturn(new ArrayList<>());
 
         List<Object> result = transactionService.getTransactionHistory(walletId, "amount,timestamp", "DESC,DESC", null);
         assertEquals(2, result.size());
 
-        verify(intraTransactionRepository, times(1)).findByWalletIdAndTransactionType(walletId, null);
-        verify(interTransactionRepository, times(1)).findByWalletIdAndTransactionType(walletId, null);
+        verify(intraTransactionRepository, times(1)).findByWalletId(walletId);
+        verify(interTransactionRepository, times(1)).findByWalletId(walletId);
     }
 
     @Test
@@ -267,7 +267,7 @@ public class TransactionServiceTest {
             transactionService.getTransactionHistory(walletId, "amounts", "DESC", null);
         });
         assertEquals("Invalid sort field: amounts", exception.getMessage());
-        verifyNoMoreInteractions(intraTransactionRepository, interTransactionRepository);
+        verifyNoInteractions(intraTransactionRepository, interTransactionRepository);
     }
 
     @Test
@@ -279,7 +279,7 @@ public class TransactionServiceTest {
         });
 
         assertEquals("Invalid sort order: DES", exception.getMessage());
-        verifyNoMoreInteractions(intraTransactionRepository, interTransactionRepository);
+        verifyNoInteractions(intraTransactionRepository, interTransactionRepository);
     }
 
     @Test
@@ -290,14 +290,14 @@ public class TransactionServiceTest {
         intraTransactions.add(new IntraTransaction(new Wallet(), TransactionType.DEPOSIT, 200.0));
         intraTransactions.add(new IntraTransaction(new Wallet(), TransactionType.DEPOSIT, 100.0));
 
-        when(intraTransactionRepository.findByWalletIdAndTransactionType(walletId, null)).thenReturn(intraTransactions);
-        when(interTransactionRepository.findByWalletIdAndTransactionType(walletId, null)).thenReturn(new ArrayList<>());
+        when(intraTransactionRepository.findByWalletId(walletId)).thenReturn(intraTransactions);
+        when(interTransactionRepository.findByWalletId(walletId)).thenReturn(new ArrayList<>());
 
         List<Object> result = transactionService.getTransactionHistory(walletId, "amount,timestamp", "DESC", null);
 
         assertEquals(2, result.size());
-        verify(intraTransactionRepository, times(1)).findByWalletIdAndTransactionType(walletId, null);
-        verify(interTransactionRepository, times(1)).findByWalletIdAndTransactionType(walletId, null);
+        verify(intraTransactionRepository, times(1)).findByWalletId(walletId);
+        verify(interTransactionRepository, times(1)).findByWalletId(walletId);
     }
 
     @Test
@@ -309,7 +309,7 @@ public class TransactionServiceTest {
         });
 
         assertEquals("The number of sort fields must be greater than or equal to the number of sort orders", exception.getMessage());
-        verifyNoMoreInteractions(intraTransactionRepository, interTransactionRepository);
+        verifyNoInteractions(intraTransactionRepository, interTransactionRepository);
     }
 
     @Test
@@ -320,14 +320,14 @@ public class TransactionServiceTest {
         intraTransactions.add(new IntraTransaction(new Wallet(), TransactionType.DEPOSIT, 200.0));
         intraTransactions.add(new IntraTransaction(new Wallet(), TransactionType.DEPOSIT, 100.0));
 
-        when(intraTransactionRepository.findByWalletIdAndTransactionType(walletId, null)).thenReturn(intraTransactions);
-        when(interTransactionRepository.findByWalletIdAndTransactionType(walletId, null)).thenReturn(new ArrayList<>());
+        when(intraTransactionRepository.findByWalletId(walletId)).thenReturn(intraTransactions);
+        when(interTransactionRepository.findByWalletId(walletId)).thenReturn(new ArrayList<>());
 
         List<Object> result = transactionService.getTransactionHistory(walletId, "AMOUNT", "DESC", null);
         assertEquals(2, result.size());
 
-        verify(intraTransactionRepository, times(1)).findByWalletIdAndTransactionType(walletId, null);
-        verify(interTransactionRepository, times(1)).findByWalletIdAndTransactionType(walletId, null);
+        verify(intraTransactionRepository, times(1)).findByWalletId(walletId);
+        verify(interTransactionRepository, times(1)).findByWalletId(walletId);
     }
 
     @Test
@@ -338,14 +338,82 @@ public class TransactionServiceTest {
         intraTransactions.add(new IntraTransaction(new Wallet(), TransactionType.DEPOSIT, 200.0));
         intraTransactions.add(new IntraTransaction(new Wallet(), TransactionType.DEPOSIT, 100.0));
 
-        when(intraTransactionRepository.findByWalletIdAndTransactionType(walletId, null)).thenReturn(intraTransactions);
-        when(interTransactionRepository.findByWalletIdAndTransactionType(walletId, null)).thenReturn(new ArrayList<>());
+        when(intraTransactionRepository.findByWalletId(walletId)).thenReturn(intraTransactions);
+        when(interTransactionRepository.findByWalletId(walletId)).thenReturn(new ArrayList<>());
 
         List<Object> result = transactionService.getTransactionHistory(walletId, "amount", "desc", null);
         assertEquals(2, result.size());
 
-        verify(intraTransactionRepository, times(1)).findByWalletIdAndTransactionType(walletId, null);
-        verify(interTransactionRepository, times(1)).findByWalletIdAndTransactionType(walletId, null);
+        verify(intraTransactionRepository, times(1)).findByWalletId(walletId);
+        verify(interTransactionRepository, times(1)).findByWalletId(walletId);
     }
 
+    @Test
+    void testGetTransactionHistoryWithTypeDepositAndTransfer() {
+        Long walletId = 2L;
+
+        List<IntraTransaction> intraTransactions = new ArrayList<>();
+        intraTransactions.add(new IntraTransaction(new Wallet(), TransactionType.DEPOSIT, 100.0));
+        intraTransactions.add(new IntraTransaction(new Wallet(), TransactionType.DEPOSIT, 200.0));
+        intraTransactions.add(new IntraTransaction(new Wallet(), TransactionType.WITHDRAWAL, 50.0));
+
+        when(intraTransactionRepository.findByWalletId(walletId)).thenReturn(intraTransactions);
+        when(interTransactionRepository.findByWalletId(walletId)).thenReturn(new ArrayList<>());
+
+        List<Object> result = transactionService.getTransactionHistory(walletId, null, null, "DEPOSIT,TRANSFER");
+
+        assertEquals(2, result.size());
+        verify(intraTransactionRepository, times(1)).findByWalletId(walletId);
+        verify(interTransactionRepository, times(1)).findByWalletId(walletId);
+    }
+
+    @Test
+    void testGetTransactionHistoryWithTransferTypeDepositTransferAndWithdrawal() {
+        Long walletId = 2L;
+
+        List<IntraTransaction> intraTransactions = new ArrayList<>();
+        intraTransactions.add(new IntraTransaction(new Wallet(), TransactionType.DEPOSIT, 100.0));
+        intraTransactions.add(new IntraTransaction(new Wallet(), TransactionType.DEPOSIT, 200.0));
+        intraTransactions.add(new IntraTransaction(new Wallet(), TransactionType.WITHDRAWAL, 50.0));
+
+        when(intraTransactionRepository.findByWalletId(walletId)).thenReturn(intraTransactions);
+        when(interTransactionRepository.findByWalletId(walletId)).thenReturn(new ArrayList<>());
+
+        List<Object> result = transactionService.getTransactionHistory(walletId, null, null, "DEPOSIT,TRANSFER,WITHDRAWAL");
+
+        assertEquals(3, result.size());
+        verify(intraTransactionRepository, times(1)).findByWalletId(walletId);
+        verify(interTransactionRepository, times(1)).findByWalletId(walletId);
+    }
+
+    @Test
+    void testGetTransactionHistoryWithTransferTypeDepositAndTransferLowerCase() {
+        Long walletId = 2L;
+
+        List<IntraTransaction> intraTransactions = new ArrayList<>();
+        intraTransactions.add(new IntraTransaction(new Wallet(), TransactionType.DEPOSIT, 100.0));
+        intraTransactions.add(new IntraTransaction(new Wallet(), TransactionType.DEPOSIT, 200.0));
+        intraTransactions.add(new IntraTransaction(new Wallet(), TransactionType.WITHDRAWAL, 50.0));
+
+        when(intraTransactionRepository.findByWalletId(walletId)).thenReturn(intraTransactions);
+        when(interTransactionRepository.findByWalletId(walletId)).thenReturn(new ArrayList<>());
+
+        List<Object> result = transactionService.getTransactionHistory(walletId, null, null, "DEPOSIT,Transfer");
+
+        assertEquals(2, result.size());
+        verify(intraTransactionRepository, times(1)).findByWalletId(walletId);
+        verify(interTransactionRepository, times(1)).findByWalletId(walletId);
+    }
+
+    @Test
+    void testGetTransactionHistoryWithTransferTypeInvalid() {
+        Long walletId = 2L;
+
+        Exception exception = assertThrows(IllegalArgumentException.class, () -> {
+            transactionService.getTransactionHistory(walletId, null, null, "DEPOSIT,Transf");
+        });
+
+        assertEquals("Invalid transaction type: Transf", exception.getMessage());
+        verifyNoInteractions(intraTransactionRepository, interTransactionRepository);
+    }
 }
