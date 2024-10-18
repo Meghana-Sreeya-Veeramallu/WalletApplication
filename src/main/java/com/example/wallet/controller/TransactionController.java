@@ -1,5 +1,7 @@
 package com.example.wallet.controller;
 
+import com.example.wallet.Exceptions.AmountCannotBeNullException;
+import com.example.wallet.Exceptions.InvalidTransactionTypeException;
 import com.example.wallet.dto.TransactionDto;
 import com.example.wallet.service.TransactionService;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -21,46 +23,33 @@ public class TransactionController {
 
     @PostMapping("/transactions")
     @PreAuthorize("isAuthenticated()")
-    public ResponseEntity<?> handleTransaction(
+    public ResponseEntity<?> createTransaction(
             @PathVariable Long userId,
             @PathVariable Long walletId,
             @RequestBody TransactionDto request) {
 
-        if (request.getTransactionType() == null){
-            return ResponseEntity.badRequest().body("Transaction type is required and cannot be null");
-        }
-        if (request.getAmount() == null){
-            return ResponseEntity.badRequest().body("Amount is required and cannot be null");
-        }
-
-        switch (request.getTransactionType().toLowerCase()) {
-            case "deposit":
-                transactionService.deposit(userId, walletId, request.getAmount());
-                break;
-            case "withdrawal":
-                transactionService.withdraw(userId, walletId, request.getAmount());
-                break;
-            case "transfer":
-                if (request.getRecipientWalletId() == null) {
-                    return ResponseEntity.badRequest().body("Recipient wallet ID is required for transfers");
-                }
-                transactionService.transfer(userId, walletId, request.getRecipientWalletId(), request.getAmount());
-                break;
-            default:
-                return ResponseEntity.badRequest().body("Invalid transaction type: " + request.getTransactionType().toLowerCase());
-        }
-
+        validateTransactionRequest(request);
+        transactionService.createTransaction(userId, walletId, request.getRecipientWalletId(), request.getAmount(), request.getTransactionType().toLowerCase());
         String successMessage = "Transaction successful: " + request.getTransactionType().toLowerCase() + " of " + request.getAmount();
         return ResponseEntity.ok(successMessage);
     }
 
     @GetMapping("/transactions")
     @PreAuthorize("isAuthenticated()")
-    public ResponseEntity<?> getTransactionHistory(@PathVariable Long userId, @PathVariable Long walletId,
-                                                   @RequestParam(required = false) String sortBy,
-                                                   @RequestParam(required = false) String sortOrder,
-                                                   @RequestParam(required = false) String transactionType) {
-        List<Object> transactions = transactionService.getTransactionHistory(userId, walletId, sortBy, sortOrder, transactionType);
+    public ResponseEntity<?> getTransactions(@PathVariable Long userId, @PathVariable Long walletId,
+                                             @RequestParam(required = false) String sortBy,
+                                             @RequestParam(required = false) String sortOrder,
+                                             @RequestParam(required = false) String transactionType) {
+        List<Object> transactions = transactionService.getTransactions(userId, walletId, sortBy, sortOrder, transactionType);
         return ResponseEntity.ok(transactions);
+    }
+
+    private void validateTransactionRequest(TransactionDto request) {
+        if (request.getTransactionType() == null) {
+            throw new InvalidTransactionTypeException("Transaction type is required and cannot be null");
+        }
+        if (request.getAmount() == null) {
+            throw new AmountCannotBeNullException("Amount is required and cannot be null");
+        }
     }
 }

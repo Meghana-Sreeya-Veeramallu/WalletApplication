@@ -34,6 +34,16 @@ public class GlobalExceptionHandler {
         return ResponseEntity.status(HttpStatus.NOT_FOUND).body("User not found");
     }
 
+    @ExceptionHandler(InvalidTransactionTypeException.class)
+    public ResponseEntity<String> handleInvalidTransactionType(InvalidTransactionTypeException e) {
+        return ResponseEntity.badRequest().body("Bad request: " + e.getMessage());
+    }
+
+    @ExceptionHandler(AmountCannotBeNullException.class)
+    public ResponseEntity<String> handleNullAmount(AmountCannotBeNullException e) {
+        return ResponseEntity.badRequest().body("Bad request: " + e.getMessage());
+    }
+
     @ExceptionHandler(DepositAmountMustBePositiveException.class)
     public ResponseEntity<String> handleDepositAmountMustBePositive(DepositAmountMustBePositiveException e) {
         return ResponseEntity.badRequest().body("Bad request: " + e.getMessage());
@@ -46,6 +56,11 @@ public class GlobalExceptionHandler {
 
     @ExceptionHandler(InsufficientFundsException.class)
     public ResponseEntity<String> handleInsufficientFunds(InsufficientFundsException e) {
+        return ResponseEntity.badRequest().body("Bad request: " + e.getMessage());
+    }
+
+    @ExceptionHandler(RecipientWalletIdCannotBeNullException.class)
+    public ResponseEntity<String> handleNullRecipientWalletId(RecipientWalletIdCannotBeNullException e) {
         return ResponseEntity.badRequest().body("Bad request: " + e.getMessage());
     }
 

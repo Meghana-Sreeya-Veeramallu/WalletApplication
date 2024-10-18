@@ -57,8 +57,6 @@ class TransactionControllerTest {
         TransactionDto requestBody = new TransactionDto("deposit", amount);
         String jsonRequestBody = objectMapper.writeValueAsString(requestBody);
 
-        when(transactionService.deposit(userId, walletId, amount)).thenReturn(amount);
-
         MvcResult mvcResult = mockMvc.perform(MockMvcRequestBuilders.post("/users/{userId}/wallets/{walletId}/transactions", userId, walletId)
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(jsonRequestBody))
@@ -69,7 +67,7 @@ class TransactionControllerTest {
         assertTrue(responseBody.contains("Transaction successful: deposit"));
         assertTrue(responseBody.contains(amount.toString()));
 
-        verify(transactionService, times(1)).deposit(userId, walletId, amount);
+        verify(transactionService, times(1)).createTransaction(userId, walletId, null, amount, "deposit");
     }
 
     @Test
@@ -82,9 +80,9 @@ class TransactionControllerTest {
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(jsonRequestBody))
                 .andExpect(status().isBadRequest())
-                .andExpect(content().string("Transaction type is required and cannot be null"));
+                .andExpect(content().string("Bad request: Transaction type is required and cannot be null"));
 
-        verify(transactionService, times(0)).deposit(userId, walletId, amount);
+        verify(transactionService, times(0)).createTransaction(userId, walletId, null, amount, null);
     }
 
     @Test
@@ -96,9 +94,9 @@ class TransactionControllerTest {
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(jsonRequestBody))
                 .andExpect(status().isBadRequest())
-                .andExpect(content().string("Amount is required and cannot be null"));
+                .andExpect(content().string("Bad request: Amount is required and cannot be null"));
 
-        verify(transactionService, times(0)).deposit(userId, walletId, null);
+        verify(transactionService, times(0)).createTransaction(userId, walletId, null, null, "deposit");
     }
 
     @Test
@@ -107,7 +105,7 @@ class TransactionControllerTest {
         TransactionDto requestBody = new TransactionDto("deposit", amount);
         String jsonRequestBody = objectMapper.writeValueAsString(requestBody);
 
-        when(transactionService.deposit(userId, walletId, amount)).thenThrow(new UserNotFoundException("User not found"));
+        doThrow(new UserNotFoundException("User not found")).when(transactionService).createTransaction(userId, walletId, null, amount, "deposit");
 
         mockMvc.perform(MockMvcRequestBuilders.post("/users/{userId}/wallets/{walletId}/transactions", userId, walletId)
                         .contentType(MediaType.APPLICATION_JSON)
@@ -115,7 +113,7 @@ class TransactionControllerTest {
                 .andExpect(status().isNotFound())
                 .andExpect(content().string("User not found"));
 
-        verify(transactionService, times(1)).deposit(userId, walletId, amount);
+        verify(transactionService, times(1)).createTransaction(userId, walletId, null, amount, "deposit");
     }
 
     @Test
@@ -124,7 +122,7 @@ class TransactionControllerTest {
         TransactionDto requestBody = new TransactionDto("deposit", amount);
         String jsonRequestBody = objectMapper.writeValueAsString(requestBody);
 
-        when(transactionService.deposit(userId, walletId, amount)).thenThrow(new UserNotAuthorizedException("Access denied: User is not authorized"));
+        doThrow(new UserNotAuthorizedException("Access denied: User is not authorized")).when(transactionService).createTransaction(userId, walletId, null, amount, "deposit");
 
         mockMvc.perform(MockMvcRequestBuilders.post("/users/{userId}/wallets/{walletId}/transactions", userId, walletId)
                         .contentType(MediaType.APPLICATION_JSON)
@@ -132,7 +130,7 @@ class TransactionControllerTest {
                 .andExpect(status().isForbidden())
                 .andExpect(content().string("Access denied: User is not authorized"));
 
-        verify(transactionService, times(1)).deposit(userId, walletId, amount);
+        verify(transactionService, times(1)).createTransaction(userId, walletId, null, amount, "deposit");
     }
 
     @Test
@@ -141,7 +139,7 @@ class TransactionControllerTest {
         TransactionDto requestBody = new TransactionDto("deposit", amount);
         String jsonRequestBody = objectMapper.writeValueAsString(requestBody);
 
-        when(transactionService.deposit(userId, walletId, amount)).thenThrow(new DepositAmountMustBePositiveException("Deposit amount must be positive"));
+        doThrow(new DepositAmountMustBePositiveException("Deposit amount must be positive")).when(transactionService).createTransaction(userId, walletId, null, amount, "deposit");
 
         mockMvc.perform(MockMvcRequestBuilders.post("/users/{userId}/wallets/{walletId}/transactions", userId, walletId)
                         .contentType(MediaType.APPLICATION_JSON)
@@ -149,7 +147,7 @@ class TransactionControllerTest {
                 .andExpect(status().isBadRequest())
                 .andExpect(content().string("Bad request: Deposit amount must be positive"));
 
-        verify(transactionService, times(1)).deposit(userId, walletId, amount);
+        verify(transactionService, times(1)).createTransaction(userId, walletId, null, amount, "deposit");
     }
 
     @Test
@@ -158,19 +156,17 @@ class TransactionControllerTest {
         TransactionDto requestBody = new TransactionDto("withdrawal", amount);
         String jsonRequestBody = objectMapper.writeValueAsString(requestBody);
 
-        when(transactionService.withdraw(userId, walletId, amount)).thenReturn(amount);
-
         MvcResult mvcResult = mockMvc.perform(MockMvcRequestBuilders.post("/users/{userId}/wallets/{walletId}/transactions", userId, walletId)
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(jsonRequestBody))
                 .andExpect(status().isOk())
-                .andReturn();;
+                .andReturn();
 
         String responseBody = mvcResult.getResponse().getContentAsString();
         assertTrue(responseBody.contains("Transaction successful: withdrawal"));
         assertTrue(responseBody.contains(amount.toString()));
 
-        verify(transactionService, times(1)).withdraw(userId, walletId, amount);
+        verify(transactionService, times(1)).createTransaction(userId, walletId, null, amount, "withdrawal");
     }
 
     @Test
@@ -183,9 +179,9 @@ class TransactionControllerTest {
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(jsonRequestBody))
                 .andExpect(status().isBadRequest())
-                .andExpect(content().string("Transaction type is required and cannot be null"));
+                .andExpect(content().string("Bad request: Transaction type is required and cannot be null"));
 
-        verify(transactionService, times(0)).withdraw(userId, walletId, amount);
+        verify(transactionService, times(0)).createTransaction(userId, walletId, null, amount, null);
     }
 
     @Test
@@ -197,9 +193,9 @@ class TransactionControllerTest {
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(jsonRequestBody))
                 .andExpect(status().isBadRequest())
-                .andExpect(content().string("Amount is required and cannot be null"));
+                .andExpect(content().string("Bad request: Amount is required and cannot be null"));
 
-        verify(transactionService, times(0)).withdraw(userId, walletId, null);
+        verify(transactionService, times(0)).createTransaction(userId, walletId, null, null, "deposit");
     }
 
     @Test
@@ -208,7 +204,7 @@ class TransactionControllerTest {
         TransactionDto requestBody = new TransactionDto("withdrawal", amount);
         String jsonRequestBody = objectMapper.writeValueAsString(requestBody);
 
-        when(transactionService.withdraw(userId, walletId, amount)).thenThrow(new UserNotFoundException("User not found"));
+        doThrow(new UserNotFoundException("User not found")).when(transactionService).createTransaction(userId, walletId, null, amount, "withdrawal");
 
         mockMvc.perform(MockMvcRequestBuilders.post("/users/{userId}/wallets/{walletId}/transactions", userId, walletId)
                         .contentType(MediaType.APPLICATION_JSON)
@@ -216,25 +212,25 @@ class TransactionControllerTest {
                 .andExpect(status().isNotFound())
                 .andExpect(content().string("User not found"));
 
-        verify(transactionService, times(1)).withdraw(userId, walletId, amount);
+        verify(transactionService, times(1)).createTransaction(userId, walletId, null, amount, "withdrawal");
     }
 
-    @Test
+        @Test
     void testWithdrawWhenWalletDoesNotBelongToOwnerException() throws Exception {
         Double amount = 100.0;
         TransactionDto requestBody = new TransactionDto("withdrawal", amount);
         String jsonRequestBody = objectMapper.writeValueAsString(requestBody);
 
-        when(transactionService.withdraw(userId, walletId, amount)).thenThrow(new UserNotAuthorizedException("Access denied: User is not authorized"));
+            doThrow(new UserNotAuthorizedException("Access denied: User is not authorized")).when(transactionService).createTransaction(userId, walletId, null, amount, "withdrawal");
 
-        mockMvc.perform(MockMvcRequestBuilders.post("/users/{userId}/wallets/{walletId}/transactions", userId, walletId)
+            mockMvc.perform(MockMvcRequestBuilders.post("/users/{userId}/wallets/{walletId}/transactions", userId, walletId)
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(jsonRequestBody))
                 .andExpect(status().isForbidden())
                 .andExpect(content().string("Access denied: User is not authorized"));
 
-        verify(transactionService, times(1)).withdraw(userId, walletId, amount);
-    }
+            verify(transactionService, times(1)).createTransaction(userId, walletId, null, amount, "withdrawal");
+        }
 
     @Test
     void testWithdrawWhenWithdrawAmountIsNegative() throws Exception {
@@ -242,7 +238,7 @@ class TransactionControllerTest {
         TransactionDto requestBody = new TransactionDto("withdrawal", amount);
         String jsonRequestBody = objectMapper.writeValueAsString(requestBody);
 
-        when(transactionService.withdraw(userId, walletId, amount)).thenThrow(new WithdrawAmountMustBePositiveException("Withdraw amount must be positive"));
+        doThrow(new WithdrawAmountMustBePositiveException("Withdraw amount must be positive")).when(transactionService).createTransaction(userId, walletId, null, amount, "withdrawal");
 
         mockMvc.perform(MockMvcRequestBuilders.post("/users/{userId}/wallets/{walletId}/transactions", userId, walletId)
                         .contentType(MediaType.APPLICATION_JSON)
@@ -250,7 +246,7 @@ class TransactionControllerTest {
                 .andExpect(status().isBadRequest())
                 .andExpect(content().string("Bad request: Withdraw amount must be positive"));
 
-        verify(transactionService, times(1)).withdraw(userId, walletId, amount);
+        verify(transactionService, times(1)).createTransaction(userId, walletId, null, amount, "withdrawal");
     }
 
     @Test
@@ -259,7 +255,7 @@ class TransactionControllerTest {
         TransactionDto requestBody = new TransactionDto("withdrawal", amount);
         String jsonRequestBody = objectMapper.writeValueAsString(requestBody);
 
-        when(transactionService.withdraw(userId, walletId, amount)).thenThrow(new InsufficientFundsException("Insufficient funds"));
+        doThrow(new InsufficientFundsException("Insufficient funds")).when(transactionService).createTransaction(userId, walletId, null, amount, "withdrawal");
 
         mockMvc.perform(MockMvcRequestBuilders.post("/users/{userId}/wallets/{walletId}/transactions", userId, walletId)
                         .contentType(MediaType.APPLICATION_JSON)
@@ -267,7 +263,7 @@ class TransactionControllerTest {
                 .andExpect(status().isBadRequest())
                 .andExpect(content().string("Bad request: Insufficient funds"));
 
-        verify(transactionService, times(1)).withdraw(userId, walletId, amount);
+        verify(transactionService, times(1)).createTransaction(userId, walletId, null, amount, "withdrawal");
     }
 
     @Test
@@ -277,8 +273,6 @@ class TransactionControllerTest {
         Double amount = 30.0;
         TransactionDto requestBody = new TransactionDto("transfer", recipientWalletId, amount);
         String jsonRequestBody = objectMapper.writeValueAsString(requestBody);
-
-        when(transactionService.transfer(userId, senderWalletId, recipientWalletId, amount)).thenReturn(70.0);
 
         MvcResult mvcResult = mockMvc.perform(MockMvcRequestBuilders.post("/users/{userId}/wallets/{senderWalletId}/transactions", userId, senderWalletId)
                         .contentType(MediaType.APPLICATION_JSON)
@@ -290,7 +284,7 @@ class TransactionControllerTest {
         assertTrue(responseBody.contains("Transaction successful: transfer"));
         assertTrue(responseBody.contains(amount.toString()));
 
-        verify(transactionService, times(1)).transfer(userId, senderWalletId, recipientWalletId, amount);
+        verify(transactionService, times(1)).createTransaction(userId, senderWalletId, recipientWalletId, amount, "transfer");
     }
 
     @Test
@@ -305,10 +299,10 @@ class TransactionControllerTest {
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(jsonRequestBody))
                 .andExpect(status().isBadRequest())
-                .andExpect(content().string("Transaction type is required and cannot be null"));
+                .andExpect(content().string("Bad request: Transaction type is required and cannot be null"));
 
-        verify(transactionService, times(0)).transfer(userId, senderWalletId, recipientWalletId, amount);
-    }
+        verify(transactionService, times(0)).createTransaction(userId, senderWalletId, recipientWalletId, amount, null);
+   }
 
     @Test
     void testTransferWhenRecipientWalletIdIsNull() throws Exception {
@@ -317,13 +311,15 @@ class TransactionControllerTest {
         TransactionDto requestBody = new TransactionDto("transfer", null, amount);
         String jsonRequestBody = objectMapper.writeValueAsString(requestBody);
 
+        doThrow(new RecipientWalletIdCannotBeNullException("Recipient wallet ID is required for transfers")).when(transactionService).createTransaction(userId, senderWalletId, null, amount, "transfer");
+
         mockMvc.perform(MockMvcRequestBuilders.post("/users/{userId}/wallets/{senderWalletId}/transactions", userId, senderWalletId)
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(jsonRequestBody))
                 .andExpect(status().isBadRequest())
-                .andExpect(content().string("Recipient wallet ID is required for transfers"));
+                .andExpect(content().string("Bad request: Recipient wallet ID is required for transfers"));
 
-        verify(transactionService, times(0)).transfer(userId, senderWalletId, null, amount);
+        verify(transactionService, times(1)).createTransaction(userId, senderWalletId, null, amount, "transfer");
     }
 
     @Test
@@ -337,9 +333,9 @@ class TransactionControllerTest {
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(jsonRequestBody))
                 .andExpect(status().isBadRequest())
-                .andExpect(content().string("Amount is required and cannot be null"));
+                .andExpect(content().string("Bad request: Amount is required and cannot be null"));
 
-        verify(transactionService, times(0)).transfer(userId, senderWalletId, recipientWalletId, null);
+        verify(transactionService, times(0)).createTransaction(userId, senderWalletId, recipientWalletId, null, "transfer");
     }
 
     @Test
@@ -350,7 +346,7 @@ class TransactionControllerTest {
         TransactionDto requestBody = new TransactionDto("transfer", recipientWalletId, amount);
         String jsonRequestBody = objectMapper.writeValueAsString(requestBody);
 
-        when(transactionService.transfer(userId, senderWalletId, recipientWalletId, amount)).thenThrow(new UserNotFoundException("Sender not found"));
+        doThrow(new UserNotFoundException("Sender not found")).when(transactionService).createTransaction(userId, senderWalletId, recipientWalletId, amount, "transfer");
 
         mockMvc.perform(MockMvcRequestBuilders.post("/users/{userId}/wallets/{senderWalletId}/transactions", userId, senderWalletId)
                         .contentType(MediaType.APPLICATION_JSON)
@@ -358,7 +354,7 @@ class TransactionControllerTest {
                 .andExpect(status().isNotFound())
                 .andExpect(content().string("User not found"));
 
-        verify(transactionService, times(1)).transfer(userId, senderWalletId, recipientWalletId, amount);
+        verify(transactionService, times(1)).createTransaction(userId, senderWalletId, recipientWalletId, amount, "transfer");
     }
 
     @Test
@@ -369,7 +365,7 @@ class TransactionControllerTest {
         TransactionDto requestBody = new TransactionDto("transfer", recipientWalletId, amount);
         String jsonRequestBody = objectMapper.writeValueAsString(requestBody);
 
-        when(transactionService.transfer(userId, senderWalletId, recipientWalletId, amount)).thenThrow(new UserNotFoundException("Recipient not found"));
+        doThrow(new UserNotFoundException("Recipient not found")).when(transactionService).createTransaction(userId, senderWalletId, recipientWalletId, amount, "transfer");
 
         mockMvc.perform(MockMvcRequestBuilders.post("/users/{userId}/wallets/{senderWalletId}/transactions", userId, senderWalletId)
                         .contentType(MediaType.APPLICATION_JSON)
@@ -377,7 +373,7 @@ class TransactionControllerTest {
                 .andExpect(status().isNotFound())
                 .andExpect(content().string("User not found"));
 
-        verify(transactionService, times(1)).transfer(userId, senderWalletId, recipientWalletId, amount);
+        verify(transactionService, times(1)).createTransaction(userId, senderWalletId, recipientWalletId, amount, "transfer");
     }
 
     @Test
@@ -388,7 +384,7 @@ class TransactionControllerTest {
         TransactionDto requestBody = new TransactionDto("transfer", recipientWalletId, amount);
         String jsonRequestBody = objectMapper.writeValueAsString(requestBody);
 
-        when(transactionService.transfer(userId, senderWalletId, recipientWalletId, amount)).thenThrow(new UserNotAuthorizedException("Access denied: User is not authorized"));
+        doThrow(new UserNotAuthorizedException("Access denied: User is not authorized")).when(transactionService).createTransaction(userId, senderWalletId, recipientWalletId, amount, "transfer");
 
         mockMvc.perform(MockMvcRequestBuilders.post("/users/{userId}/wallets/{senderWalletId}/transactions", userId, senderWalletId)
                         .contentType(MediaType.APPLICATION_JSON)
@@ -396,7 +392,7 @@ class TransactionControllerTest {
                 .andExpect(status().isForbidden())
                 .andExpect(content().string("Access denied: User is not authorized"));
 
-        verify(transactionService, times(1)).transfer(userId, senderWalletId, recipientWalletId, amount);
+        verify(transactionService, times(1)).createTransaction(userId, senderWalletId, recipientWalletId, amount, "transfer");
     }
 
     @Test
@@ -407,7 +403,7 @@ class TransactionControllerTest {
         TransactionDto requestBody = new TransactionDto("transfer", recipientWalletId, amount);
         String jsonRequestBody = objectMapper.writeValueAsString(requestBody);
 
-        when(transactionService.transfer(userId, senderWalletId, recipientWalletId, amount)).thenThrow(new InsufficientFundsException("Insufficient funds"));
+        doThrow(new InsufficientFundsException("Insufficient funds")).when(transactionService).createTransaction(userId, senderWalletId, recipientWalletId, amount, "transfer");
 
         mockMvc.perform(MockMvcRequestBuilders.post("/users/{userId}/wallets/{senderWalletId}/transactions", userId, senderWalletId)
                         .contentType(MediaType.APPLICATION_JSON)
@@ -415,7 +411,7 @@ class TransactionControllerTest {
                 .andExpect(status().isBadRequest())
                 .andExpect(content().string("Bad request: Insufficient funds"));
 
-        verify(transactionService, times(1)).transfer(userId, senderWalletId, recipientWalletId, amount);
+        verify(transactionService, times(1)).createTransaction(userId, senderWalletId, recipientWalletId, amount, "transfer");
     }
 
     @Test
@@ -426,7 +422,7 @@ class TransactionControllerTest {
         TransactionDto requestBody = new TransactionDto("transfer", recipientWalletId, amount);
         String jsonRequestBody = objectMapper.writeValueAsString(requestBody);
 
-        when(transactionService.transfer(userId, senderWalletId, recipientWalletId, amount)).thenThrow(new TransferAmountMustBePositiveException("Transfer amount must be positive"));
+        doThrow(new TransferAmountMustBePositiveException("Transfer amount must be positive")).when(transactionService).createTransaction(userId, senderWalletId, recipientWalletId, amount, "transfer");
 
         mockMvc.perform(MockMvcRequestBuilders.post("/users/{userId}/wallets/{senderWalletId}/transactions", userId, senderWalletId)
                         .contentType(MediaType.APPLICATION_JSON)
@@ -434,30 +430,33 @@ class TransactionControllerTest {
                 .andExpect(status().isBadRequest())
                 .andExpect(content().string("Bad request: Transfer amount must be positive"));
 
-        verify(transactionService, times(1)).transfer(userId, senderWalletId, recipientWalletId, amount);
+        verify(transactionService, times(1)).createTransaction(userId, senderWalletId, recipientWalletId, amount, "transfer");
     }
 
     @Test
     void testInvalidTransactionTypeException() throws Exception {
-        TransactionDto requestBody = new TransactionDto("random", 30.0);
+        Double amount = 30.0;
+        TransactionDto requestBody = new TransactionDto("random", amount);
         String jsonRequestBody = objectMapper.writeValueAsString(requestBody);
+
+        doThrow(new InvalidTransactionTypeException("Invalid transaction type: random")).when(transactionService).createTransaction(userId, walletId, null, amount, "random");
 
         mockMvc.perform(MockMvcRequestBuilders.post("/users/{userId}/wallets/{senderWalletId}/transactions", userId, walletId)
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(jsonRequestBody))
                 .andExpect(status().isBadRequest())
-                .andExpect(content().string("Invalid transaction type: random"));
+                .andExpect(content().string("Bad request: Invalid transaction type: random"));
 
-        verify(transactionService, times(0)).withdraw(userId, walletId, null);
+        verify(transactionService, times(1)).createTransaction(userId, walletId, null, amount, "random");
     }
 
     @Test
-    void testGetTransactionHistoryWhenSuccessful() throws Exception {
+    void testGetTransactionsWhenSuccessful() throws Exception {
         List<Object> transactions = new ArrayList<>();
         transactions.add(new IntraTransaction(new Wallet(), TransactionType.WITHDRAWAL, 10.0));
         transactions.add(new InterTransaction(new Wallet(), new Wallet(), TransactionType.TRANSFER, 100.0));
 
-        when(transactionService.getTransactionHistory(userId, walletId, null, null, null)).thenReturn(transactions);
+        when(transactionService.getTransactions(userId, walletId, null, null, null)).thenReturn(transactions);
 
         MvcResult mvcResult = mockMvc.perform(MockMvcRequestBuilders.get("/users/{userId}/wallets/{walletId}/transactions", userId, walletId))
                 .andExpect(status().isOk())
@@ -465,49 +464,49 @@ class TransactionControllerTest {
 
         List<Object> responseBody = objectMapper.readValue(mvcResult.getResponse().getContentAsString(), new TypeReference<>() {});
         assertEquals(transactions.size(), responseBody.size());
-        verify(transactionService, times(1)).getTransactionHistory(userId, walletId, null, null, null);
+        verify(transactionService, times(1)).getTransactions(userId, walletId, null, null, null);
     }
 
     @Test
-    void testGetTransactionHistoryWhenUserNotFoundException() throws Exception {
-        when(transactionService.getTransactionHistory(userId, walletId, null, null, null)).thenThrow(new UserNotFoundException("User not found"));
+    void testGetTransactionsWhenUserNotFoundException() throws Exception {
+        when(transactionService.getTransactions(userId, walletId, null, null, null)).thenThrow(new UserNotFoundException("User not found"));
 
         mockMvc.perform(MockMvcRequestBuilders.get("/users/{userId}/wallets/{walletId}/transactions", userId, walletId))
                 .andExpect(status().isNotFound())
                 .andExpect(content().string("User not found"));
 
-        verify(transactionService, times(1)).getTransactionHistory(userId, walletId, null, null, null);
+        verify(transactionService, times(1)).getTransactions(userId, walletId, null, null, null);
     }
 
     @Test
-    void testGetTransactionHistoryWhenWalletDoesNotBelongToUserException() throws Exception {
-        when(transactionService.getTransactionHistory(userId, walletId, null, null, null)).thenThrow(new UserNotAuthorizedException("Access denied: User is not authorized"));
+    void testGetTransactionsWhenWalletDoesNotBelongToUserException() throws Exception {
+        when(transactionService.getTransactions(userId, walletId, null, null, null)).thenThrow(new UserNotAuthorizedException("Access denied: User is not authorized"));
 
         mockMvc.perform(MockMvcRequestBuilders.get("/users/{userId}/wallets/{walletId}/transactions", userId, walletId))
                 .andExpect(status().isForbidden())
                 .andExpect(content().string("Access denied: User is not authorized"));
 
-        verify(transactionService, times(1)).getTransactionHistory(userId, walletId, null, null, null);
+        verify(transactionService, times(1)).getTransactions(userId, walletId, null, null, null);
     }
 
     @Test
-    void testGetTransactionHistoryWhenOtherException() throws Exception {
-        when(transactionService.getTransactionHistory(userId, walletId, null, null, null)).thenThrow(new RuntimeException("Unexpected error"));
+    void testGetTransactionsWhenOtherException() throws Exception {
+        when(transactionService.getTransactions(userId, walletId, null, null, null)).thenThrow(new RuntimeException("Unexpected error"));
 
         mockMvc.perform(MockMvcRequestBuilders.get("/users/{userId}/wallets/{walletId}/transactions", userId, walletId))
                 .andExpect(status().isInternalServerError())
                 .andExpect(content().string("An error occurred: Unexpected error"));
 
-        verify(transactionService, times(1)).getTransactionHistory(userId, walletId, null, null, null);
+        verify(transactionService, times(1)).getTransactions(userId, walletId, null, null, null);
     }
 
     @Test
-    void testGetTransactionHistoryWhenSortByTimestampAscending() throws Exception {
+    void testGetTransactionsWhenSortByTimestampAscending() throws Exception {
         List<Object> transactions = new ArrayList<>();
         transactions.add(new IntraTransaction(new Wallet(), TransactionType.WITHDRAWAL, 10.0));
         transactions.add(new InterTransaction(new Wallet(), new Wallet(), TransactionType.TRANSFER, 100.0));
 
-        when(transactionService.getTransactionHistory(userId, walletId, "timestamp", "ASC", null)).thenReturn(transactions);
+        when(transactionService.getTransactions(userId, walletId, "timestamp", "ASC", null)).thenReturn(transactions);
 
         MvcResult mvcResult = mockMvc.perform(MockMvcRequestBuilders.get("/users/{userId}/wallets/{walletId}/transactions?sortBy=timestamp&sortOrder=ASC", userId, walletId))
                 .andExpect(status().isOk())
@@ -515,16 +514,16 @@ class TransactionControllerTest {
 
         List<Object> responseBody = objectMapper.readValue(mvcResult.getResponse().getContentAsString(), new TypeReference<>() {});
         assertEquals(transactions.size(), responseBody.size());
-        verify(transactionService, times(1)).getTransactionHistory(userId, walletId, "timestamp", "ASC", null);
+        verify(transactionService, times(1)).getTransactions(userId, walletId, "timestamp", "ASC", null);
     }
 
     @Test
-    void testGetTransactionHistoryWhenSortByTimestampDescending() throws Exception {
+    void testGetTransactionsWhenSortByTimestampDescending() throws Exception {
         List<Object> transactions = new ArrayList<>();
         transactions.add(new IntraTransaction(new Wallet(), TransactionType.WITHDRAWAL, 10.0));
         transactions.add(new InterTransaction(new Wallet(), new Wallet(), TransactionType.TRANSFER, 100.0));
 
-        when(transactionService.getTransactionHistory(userId, walletId, "timestamp", "DESC", null)).thenReturn(transactions);
+        when(transactionService.getTransactions(userId, walletId, "timestamp", "DESC", null)).thenReturn(transactions);
 
         MvcResult mvcResult = mockMvc.perform(MockMvcRequestBuilders.get("/users/{userId}/wallets/{walletId}/transactions?sortBy=timestamp&sortOrder=DESC", userId, walletId))
                 .andExpect(status().isOk())
@@ -532,16 +531,16 @@ class TransactionControllerTest {
 
         List<Object> responseBody = objectMapper.readValue(mvcResult.getResponse().getContentAsString(), new TypeReference<>() {});
         assertEquals(transactions.size(), responseBody.size());
-        verify(transactionService, times(1)).getTransactionHistory(userId, walletId, "timestamp", "DESC", null);
+        verify(transactionService, times(1)).getTransactions(userId, walletId, "timestamp", "DESC", null);
     }
 
     @Test
-    void testGetTransactionHistoryWhenTypeDeposit() throws Exception {
+    void testGetTransactionsWhenTypeDeposit() throws Exception {
         List<Object> transactions = new ArrayList<>();
         transactions.add(new IntraTransaction(new Wallet(), TransactionType.DEPOSIT, 10.0));
         transactions.add(new IntraTransaction(new Wallet(), TransactionType.DEPOSIT, 70.0));
 
-        when(transactionService.getTransactionHistory(userId, walletId, null, null, "DEPOSIT")).thenReturn(transactions);
+        when(transactionService.getTransactions(userId, walletId, null, null, "DEPOSIT")).thenReturn(transactions);
 
         MvcResult mvcResult = mockMvc.perform(MockMvcRequestBuilders.get("/users/{userId}/wallets/{walletId}/transactions?transactionType=DEPOSIT", userId, walletId))
                 .andExpect(status().isOk())
@@ -549,16 +548,16 @@ class TransactionControllerTest {
 
         List<Object> responseBody = objectMapper.readValue(mvcResult.getResponse().getContentAsString(), new TypeReference<>() {});
         assertEquals(transactions.size(), responseBody.size());
-        verify(transactionService, times(1)).getTransactionHistory(userId, walletId, null, null, "DEPOSIT");
+        verify(transactionService, times(1)).getTransactions(userId, walletId, null, null, "DEPOSIT");
     }
 
     @Test
-    void testGetTransactionHistoryWhenTypeWithdrawal() throws Exception {
+    void testGetTransactionsWhenTypeWithdrawal() throws Exception {
         List<Object> transactions = new ArrayList<>();
         transactions.add(new IntraTransaction(new Wallet(), TransactionType.WITHDRAWAL, 10.0));
         transactions.add(new IntraTransaction(new Wallet(), TransactionType.WITHDRAWAL, 70.0));
 
-        when(transactionService.getTransactionHistory(userId, walletId, null, null, "WITHDRAWAL")).thenReturn(transactions);
+        when(transactionService.getTransactions(userId, walletId, null, null, "WITHDRAWAL")).thenReturn(transactions);
 
         MvcResult mvcResult = mockMvc.perform(MockMvcRequestBuilders.get("/users/{userId}/wallets/{walletId}/transactions?transactionType=WITHDRAWAL", userId, walletId))
                 .andExpect(status().isOk())
@@ -566,16 +565,16 @@ class TransactionControllerTest {
 
         List<Object> responseBody = objectMapper.readValue(mvcResult.getResponse().getContentAsString(), new TypeReference<>() {});
         assertEquals(transactions.size(), responseBody.size());
-        verify(transactionService, times(1)).getTransactionHistory(userId, walletId, null, null, "WITHDRAWAL");
+        verify(transactionService, times(1)).getTransactions(userId, walletId, null, null, "WITHDRAWAL");
     }
 
     @Test
-    void testGetTransactionHistoryWhenTypeTransfer() throws Exception {
+    void testGetTransactionsWhenTypeTransfer() throws Exception {
         List<Object> transactions = new ArrayList<>();
         transactions.add(new InterTransaction(new Wallet(), new Wallet(), TransactionType.TRANSFER, 10.0));
         transactions.add(new InterTransaction(new Wallet(), new Wallet(), TransactionType.TRANSFER, 70.0));
 
-        when(transactionService.getTransactionHistory(userId, walletId, null, null, "TRANSFER")).thenReturn(transactions);
+        when(transactionService.getTransactions(userId, walletId, null, null, "TRANSFER")).thenReturn(transactions);
 
         MvcResult mvcResult = mockMvc.perform(MockMvcRequestBuilders.get("/users/{userId}/wallets/{walletId}/transactions?transactionType=TRANSFER", userId, walletId))
                 .andExpect(status().isOk())
@@ -583,16 +582,16 @@ class TransactionControllerTest {
 
         List<Object> responseBody = objectMapper.readValue(mvcResult.getResponse().getContentAsString(), new TypeReference<>() {});
         assertEquals(transactions.size(), responseBody.size());
-        verify(transactionService, times(1)).getTransactionHistory(userId, walletId, null, null, "TRANSFER");
+        verify(transactionService, times(1)).getTransactions(userId, walletId, null, null, "TRANSFER");
     }
 
     @Test
-    void testGetTransactionHistoryWhenSortByTimestampAscendingAndTypeTransfer() throws Exception {
+    void testGetTransactionsWhenSortByTimestampAscendingAndTypeTransfer() throws Exception {
         List<Object> transactions = new ArrayList<>();
         transactions.add(new InterTransaction(new Wallet(), new Wallet(), TransactionType.TRANSFER, 10.0));
         transactions.add(new InterTransaction(new Wallet(), new Wallet(), TransactionType.TRANSFER, 70.0));
 
-        when(transactionService.getTransactionHistory(userId, walletId, "timestamp", "ASC", "TRANSFER")).thenReturn(transactions);
+        when(transactionService.getTransactions(userId, walletId, "timestamp", "ASC", "TRANSFER")).thenReturn(transactions);
 
         MvcResult mvcResult = mockMvc.perform(MockMvcRequestBuilders.get("/users/{userId}/wallets/{walletId}/transactions?sortBy=timestamp&sortOrder=ASC&transactionType=TRANSFER", userId, walletId))
                 .andExpect(status().isOk())
@@ -600,16 +599,16 @@ class TransactionControllerTest {
 
         List<Object> responseBody = objectMapper.readValue(mvcResult.getResponse().getContentAsString(), new TypeReference<>() {});
         assertEquals(transactions.size(), responseBody.size());
-        verify(transactionService, times(1)).getTransactionHistory(userId, walletId, "timestamp", "ASC", "TRANSFER");
+        verify(transactionService, times(1)).getTransactions(userId, walletId, "timestamp", "ASC", "TRANSFER");
     }
 
     @Test
-    void testGetTransactionHistoryWhenSortByAmountDescendingAndTypeDeposit() throws Exception {
+    void testGetTransactionsWhenSortByAmountDescendingAndTypeDeposit() throws Exception {
         List<Object> transactions = new ArrayList<>();
         transactions.add(new IntraTransaction(new Wallet(), TransactionType.DEPOSIT, 100.0));
         transactions.add(new IntraTransaction(new Wallet(), TransactionType.DEPOSIT, 200.0));
 
-        when(transactionService.getTransactionHistory(userId, walletId, "amount", "DESC", "DEPOSIT")).thenReturn(transactions);
+        when(transactionService.getTransactions(userId, walletId, "amount", "DESC", "DEPOSIT")).thenReturn(transactions);
 
         MvcResult mvcResult = mockMvc.perform(MockMvcRequestBuilders.get("/users/{userId}/wallets/{walletId}/transactions?sortBy=amount&sortOrder=DESC&transactionType=DEPOSIT", userId, walletId))
                 .andExpect(status().isOk())
@@ -617,16 +616,16 @@ class TransactionControllerTest {
 
         List<Object> responseBody = objectMapper.readValue(mvcResult.getResponse().getContentAsString(), new TypeReference<>() {});
         assertEquals(transactions.size(), responseBody.size());
-        verify(transactionService, times(1)).getTransactionHistory(userId, walletId, "amount", "DESC", "DEPOSIT");
+        verify(transactionService, times(1)).getTransactions(userId, walletId, "amount", "DESC", "DEPOSIT");
     }
 
     @Test
-    void testGetTransactionHistoryWhenSortByAmountAndDescending() throws Exception {
+    void testGetTransactionsWhenSortByAmountAndDescending() throws Exception {
         List<Object> transactions = new ArrayList<>();
         transactions.add(new IntraTransaction(new Wallet(), TransactionType.DEPOSIT, 200.0));
         transactions.add(new IntraTransaction(new Wallet(), TransactionType.WITHDRAWAL, 100.0));
 
-        when(transactionService.getTransactionHistory(userId, walletId, "amount", "DESC", null)).thenReturn(transactions);
+        when(transactionService.getTransactions(userId, walletId, "amount", "DESC", null)).thenReturn(transactions);
 
         MvcResult mvcResult = mockMvc.perform(MockMvcRequestBuilders.get("/users/{userId}/wallets/{walletId}/transactions?sortBy=amount&sortOrder=DESC", userId, walletId))
                 .andExpect(status().isOk())
@@ -634,16 +633,16 @@ class TransactionControllerTest {
 
         List<Object> responseBody = objectMapper.readValue(mvcResult.getResponse().getContentAsString(), new TypeReference<>() {});
         assertEquals(transactions.size(), responseBody.size());
-        verify(transactionService, times(1)).getTransactionHistory(userId, walletId, "amount", "DESC", null);
+        verify(transactionService, times(1)).getTransactions(userId, walletId, "amount", "DESC", null);
     }
 
     @Test
-    void testGetTransactionHistoryWhenSortByAmountAndTimestampDescending() throws Exception {
+    void testGetTransactionsWhenSortByAmountAndTimestampDescending() throws Exception {
         List<Object> transactions = new ArrayList<>();
         transactions.add(new IntraTransaction(new Wallet(), TransactionType.DEPOSIT, 200.0));
         transactions.add(new IntraTransaction(new Wallet(), TransactionType.WITHDRAWAL, 100.0));
 
-        when(transactionService.getTransactionHistory(userId, walletId, "amount,timestamp", "DESC,DESC", null)).thenReturn(transactions);
+        when(transactionService.getTransactions(userId, walletId, "amount,timestamp", "DESC,DESC", null)).thenReturn(transactions);
 
         MvcResult mvcResult = mockMvc.perform(MockMvcRequestBuilders.get("/users/{userId}/wallets/{walletId}/transactions?sortBy=amount,timestamp&sortOrder=DESC,DESC", userId, walletId))
                 .andExpect(status().isOk())
@@ -651,38 +650,38 @@ class TransactionControllerTest {
 
         List<Object> responseBody = objectMapper.readValue(mvcResult.getResponse().getContentAsString(), new TypeReference<>() {});
         assertEquals(transactions.size(), responseBody.size());
-        verify(transactionService, times(1)).getTransactionHistory(userId, walletId, "amount,timestamp", "DESC,DESC", null);
+        verify(transactionService, times(1)).getTransactions(userId, walletId, "amount,timestamp", "DESC,DESC", null);
     }
 
     @Test
-    void testGetTransactionHistoryWhenSortByInvalidField() throws Exception {
-        when(transactionService.getTransactionHistory(userId, walletId, "amounts", "DESC", null)).thenThrow(new IllegalArgumentException("Invalid sort field: amounts"));
+    void testGetTransactionsWhenSortByInvalidField() throws Exception {
+        when(transactionService.getTransactions(userId, walletId, "amounts", "DESC", null)).thenThrow(new IllegalArgumentException("Invalid sort field: amounts"));
 
         mockMvc.perform(MockMvcRequestBuilders.get("/users/{userId}/wallets/{walletId}/transactions?sortBy=amounts&sortOrder=DESC", userId, walletId))
                 .andExpect(status().isBadRequest())
                 .andExpect(content().string("Bad request: Invalid sort field: amounts"));
 
-        verify(transactionService, times(1)).getTransactionHistory(userId, walletId, "amounts", "DESC", null);
+        verify(transactionService, times(1)).getTransactions(userId, walletId, "amounts", "DESC", null);
     }
 
     @Test
-    void testGetTransactionHistoryWhenSortOrderInvalid() throws Exception {
-        when(transactionService.getTransactionHistory(userId, walletId, "amount", "DES", null)).thenThrow(new IllegalArgumentException("Invalid sort order: DES"));
+    void testGetTransactionsWhenSortOrderInvalid() throws Exception {
+        when(transactionService.getTransactions(userId, walletId, "amount", "DES", null)).thenThrow(new IllegalArgumentException("Invalid sort order: DES"));
 
         mockMvc.perform(MockMvcRequestBuilders.get("/users/{userId}/wallets/{walletId}/transactions?sortBy=amount&sortOrder=DES", userId, walletId))
                 .andExpect(status().isBadRequest())
                 .andExpect(content().string("Bad request: Invalid sort order: DES"));
 
-        verify(transactionService, times(1)).getTransactionHistory(userId, walletId, "amount", "DES", null);
+        verify(transactionService, times(1)).getTransactions(userId, walletId, "amount", "DES", null);
     }
 
     @Test
-    void testGetTransactionHistoryWhenSortOrderLengthIsLessThanSortByLength() throws Exception {
+    void testGetTransactionsWhenSortOrderLengthIsLessThanSortByLength() throws Exception {
         List<Object> transactions = new ArrayList<>();
         transactions.add(new IntraTransaction(new Wallet(), TransactionType.DEPOSIT, 200.0));
         transactions.add(new IntraTransaction(new Wallet(), TransactionType.DEPOSIT, 100.0));
 
-        when(transactionService.getTransactionHistory(userId, walletId, "amount,timestamp", "DESC", null)).thenReturn(transactions);
+        when(transactionService.getTransactions(userId, walletId, "amount,timestamp", "DESC", null)).thenReturn(transactions);
 
         MvcResult mvcResult = mockMvc.perform(MockMvcRequestBuilders.get("/users/{userId}/wallets/{walletId}/transactions?sortBy=amount,timestamp&sortOrder=DESC", userId, walletId))
                 .andExpect(status().isOk())
@@ -690,27 +689,27 @@ class TransactionControllerTest {
 
         List<Object> responseBody = objectMapper.readValue(mvcResult.getResponse().getContentAsString(), new TypeReference<>() {});
         assertEquals(transactions.size(), responseBody.size());
-        verify(transactionService, times(1)).getTransactionHistory(userId, walletId, "amount,timestamp", "DESC", null);
+        verify(transactionService, times(1)).getTransactions(userId, walletId, "amount,timestamp", "DESC", null);
     }
 
     @Test
-    void testGetTransactionHistoryWhenSortOrderLengthIsGreaterThanSortByLength() throws Exception {
-        when(transactionService.getTransactionHistory(userId, walletId, "amount", "DESC,ASC", null)).thenThrow(new IllegalArgumentException("The number of sort fields must be greater than or equal to the number of sort orders"));
+    void testGetTransactionsWhenSortOrderLengthIsGreaterThanSortByLength() throws Exception {
+        when(transactionService.getTransactions(userId, walletId, "amount", "DESC,ASC", null)).thenThrow(new IllegalArgumentException("The number of sort fields must be greater than or equal to the number of sort orders"));
 
         mockMvc.perform(MockMvcRequestBuilders.get("/users/{userId}/wallets/{walletId}/transactions?sortBy=amount&sortOrder=DESC,ASC", userId, walletId))
                 .andExpect(status().isBadRequest())
                 .andExpect(content().string("Bad request: The number of sort fields must be greater than or equal to the number of sort orders"));
 
-        verify(transactionService, times(1)).getTransactionHistory(userId, walletId, "amount", "DESC,ASC", null);
+        verify(transactionService, times(1)).getTransactions(userId, walletId, "amount", "DESC,ASC", null);
     }
 
     @Test
-    void testGetTransactionHistoryWhenSortByUpperCaseAmount() throws Exception {
+    void testGetTransactionsWhenSortByUpperCaseAmount() throws Exception {
         List<Object> transactions = new ArrayList<>();
         transactions.add(new IntraTransaction(new Wallet(), TransactionType.DEPOSIT, 200.0));
         transactions.add(new IntraTransaction(new Wallet(), TransactionType.WITHDRAWAL, 100.0));
 
-        when(transactionService.getTransactionHistory(userId, walletId, "AMOUNT", "DESC", null)).thenReturn(transactions);
+        when(transactionService.getTransactions(userId, walletId, "AMOUNT", "DESC", null)).thenReturn(transactions);
 
         MvcResult mvcResult = mockMvc.perform(MockMvcRequestBuilders.get("/users/{userId}/wallets/{walletId}/transactions?sortBy=AMOUNT&sortOrder=DESC", userId, walletId))
                 .andExpect(status().isOk())
@@ -718,16 +717,16 @@ class TransactionControllerTest {
 
         List<Object> responseBody = objectMapper.readValue(mvcResult.getResponse().getContentAsString(), new TypeReference<>() {});
         assertEquals(transactions.size(), responseBody.size());
-        verify(transactionService, times(1)).getTransactionHistory(userId, walletId, "AMOUNT", "DESC", null);
+        verify(transactionService, times(1)).getTransactions(userId, walletId, "AMOUNT", "DESC", null);
     }
 
     @Test
-    void testGetTransactionHistoryWhenSortOrderLowerCaseDesc() throws Exception {
+    void testGetTransactionsWhenSortOrderLowerCaseDesc() throws Exception {
         List<Object> transactions = new ArrayList<>();
         transactions.add(new IntraTransaction(new Wallet(), TransactionType.DEPOSIT, 200.0));
         transactions.add(new IntraTransaction(new Wallet(), TransactionType.WITHDRAWAL, 100.0));
 
-        when(transactionService.getTransactionHistory(userId, walletId, "amount", "desc", null)).thenReturn(transactions);
+        when(transactionService.getTransactions(userId, walletId, "amount", "desc", null)).thenReturn(transactions);
 
         MvcResult mvcResult = mockMvc.perform(MockMvcRequestBuilders.get("/users/{userId}/wallets/{walletId}/transactions?sortBy=amount&sortOrder=desc", userId, walletId))
                 .andExpect(status().isOk())
@@ -735,11 +734,11 @@ class TransactionControllerTest {
 
         List<Object> responseBody = objectMapper.readValue(mvcResult.getResponse().getContentAsString(), new TypeReference<>() {});
         assertEquals(transactions.size(), responseBody.size());
-        verify(transactionService, times(1)).getTransactionHistory(userId, walletId, "amount", "desc", null);
+        verify(transactionService, times(1)).getTransactions(userId, walletId, "amount", "desc", null);
     }
 
     @Test
-    void testGetTransactionHistoryWithTypeDepositAndTransfer() throws Exception {
+    void testGetTransactionsWithTypeDepositAndTransfer() throws Exception {
         Long walletId = 2L;
 
         List<Object> transactions = new ArrayList<>();
@@ -747,7 +746,7 @@ class TransactionControllerTest {
         transactions.add(new IntraTransaction(new Wallet(), TransactionType.DEPOSIT, 200.0));
         transactions.add(new InterTransaction(new Wallet(), new Wallet(), TransactionType.TRANSFER, 100.0));
 
-        when(transactionService.getTransactionHistory(userId, walletId, null, null, "DEPOSIT,TRANSFER")).thenReturn(transactions);
+        when(transactionService.getTransactions(userId, walletId, null, null, "DEPOSIT,TRANSFER")).thenReturn(transactions);
 
         MvcResult mvcResult = mockMvc.perform(MockMvcRequestBuilders.get("/users/{userId}/wallets/{walletId}/transactions?transactionType=DEPOSIT,TRANSFER", userId, walletId))
                 .andExpect(status().isOk())
@@ -755,12 +754,12 @@ class TransactionControllerTest {
 
         List<Object> responseBody = objectMapper.readValue(mvcResult.getResponse().getContentAsString(), new TypeReference<>() {});
         assertEquals(transactions.size(), responseBody.size());
-        verify(transactionService, times(1)).getTransactionHistory(userId, walletId, null, null, "DEPOSIT,TRANSFER");
+        verify(transactionService, times(1)).getTransactions(userId, walletId, null, null, "DEPOSIT,TRANSFER");
 
     }
 
     @Test
-    void testGetTransactionHistoryWithTransferTypeDepositTransferAndWithdrawal() throws Exception {
+    void testGetTransactionsWithTransferTypeDepositTransferAndWithdrawal() throws Exception {
         Long walletId = 2L;
 
         List<Object> transactions = new ArrayList<>();
@@ -769,7 +768,7 @@ class TransactionControllerTest {
         transactions.add(new IntraTransaction(new Wallet(), TransactionType.WITHDRAWAL, 50.0));
         transactions.add(new InterTransaction(new Wallet(), new Wallet(), TransactionType.TRANSFER, 100.0));
 
-        when(transactionService.getTransactionHistory(userId, walletId, null, null, "DEPOSIT,TRANSFER,WITHDRAWAL")).thenReturn(transactions);
+        when(transactionService.getTransactions(userId, walletId, null, null, "DEPOSIT,TRANSFER,WITHDRAWAL")).thenReturn(transactions);
 
         MvcResult mvcResult = mockMvc.perform(MockMvcRequestBuilders.get("/users/{userId}/wallets/{walletId}/transactions?transactionType=DEPOSIT,TRANSFER,WITHDRAWAL", userId, walletId))
                 .andExpect(status().isOk())
@@ -777,11 +776,11 @@ class TransactionControllerTest {
 
         List<Object> responseBody = objectMapper.readValue(mvcResult.getResponse().getContentAsString(), new TypeReference<>() {});
         assertEquals(transactions.size(), responseBody.size());
-        verify(transactionService, times(1)).getTransactionHistory(userId, walletId, null, null, "DEPOSIT,TRANSFER,WITHDRAWAL");
+        verify(transactionService, times(1)).getTransactions(userId, walletId, null, null, "DEPOSIT,TRANSFER,WITHDRAWAL");
     }
 
     @Test
-    void testGetTransactionHistoryWithTransferTypeDepositAndTransferLowerCase() throws Exception {
+    void testGetTransactionsWithTransferTypeDepositAndTransferLowerCase() throws Exception {
         Long walletId = 2L;
 
         List<Object> transactions = new ArrayList<>();
@@ -789,7 +788,7 @@ class TransactionControllerTest {
         transactions.add(new IntraTransaction(new Wallet(), TransactionType.DEPOSIT, 200.0));
         transactions.add(new InterTransaction(new Wallet(), new Wallet(), TransactionType.TRANSFER, 150.0));
 
-        when(transactionService.getTransactionHistory(userId, walletId, null, null, "DEPOSIT,Transfer")).thenReturn(transactions);
+        when(transactionService.getTransactions(userId, walletId, null, null, "DEPOSIT,Transfer")).thenReturn(transactions);
 
         MvcResult mvcResult = mockMvc.perform(MockMvcRequestBuilders.get("/users/{userId}/wallets/{walletId}/transactions?transactionType=DEPOSIT,Transfer", userId, walletId))
                 .andExpect(status().isOk())
@@ -797,19 +796,19 @@ class TransactionControllerTest {
 
         List<Object> responseBody = objectMapper.readValue(mvcResult.getResponse().getContentAsString(), new TypeReference<>() {});
         assertEquals(3, responseBody.size());
-        verify(transactionService, times(1)).getTransactionHistory(userId, walletId, null, null, "DEPOSIT,Transfer");
+        verify(transactionService, times(1)).getTransactions(userId, walletId, null, null, "DEPOSIT,Transfer");
     }
 
     @Test
-    void testGetTransactionHistoryWithTransferTypeInvalid() throws Exception {
+    void testGetTransactionsWithTransactionTypeInvalid() throws Exception {
         Long walletId = 2L;
 
-        when(transactionService.getTransactionHistory(userId, walletId, null, null, "DEPOSIT,Transf")).thenThrow(new IllegalArgumentException("Invalid transaction type: Transf"));
+        when(transactionService.getTransactions(userId, walletId, null, null, "DEPOSIT,Transf")).thenThrow(new IllegalArgumentException("Invalid transaction type: Transf"));
 
         mockMvc.perform(MockMvcRequestBuilders.get("/users/{userId}/wallets/{walletId}/transactions?transactionType=DEPOSIT,Transf", userId, walletId))
                 .andExpect(status().isBadRequest())
                 .andExpect(content().string("Bad request: Invalid transaction type: Transf"));
 
-        verify(transactionService, times(1)).getTransactionHistory(userId, walletId, null, null, "DEPOSIT,Transf");
+        verify(transactionService, times(1)).getTransactions(userId, walletId, null, null, "DEPOSIT,Transf");
     }
 }

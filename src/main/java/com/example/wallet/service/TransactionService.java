@@ -1,6 +1,8 @@
 package com.example.wallet.service;
 
 import com.example.wallet.Enums.TransactionType;
+import com.example.wallet.Exceptions.InvalidTransactionTypeException;
+import com.example.wallet.Exceptions.RecipientWalletIdCannotBeNullException;
 import com.example.wallet.Exceptions.UserNotAuthorizedException;
 import com.example.wallet.Exceptions.UserNotFoundException;
 import com.example.wallet.model.InterTransaction;
@@ -35,6 +37,26 @@ public class TransactionService {
         this.walletRepository = walletRepository;
         this.intraTransactionRepository = intraTransactionRepository;
         this.interTransactionRepository = interTransactionRepository;
+    }
+
+    @Transactional
+    public void createTransaction(Long userId, Long walletId, Long recipientWalletId, Double amount, String transactionType) {
+        switch (transactionType) {
+            case "deposit":
+                deposit(userId, walletId, amount);
+                break;
+            case "withdrawal":
+                withdraw(userId, walletId, amount);
+                break;
+            case "transfer":
+                if (recipientWalletId == null) {
+                    throw new RecipientWalletIdCannotBeNullException("Recipient wallet ID is required for transfers");
+                }
+                transfer(userId, walletId, recipientWalletId, amount);
+                break;
+            default:
+                throw new InvalidTransactionTypeException("Invalid transaction type");
+        }
     }
 
     @Transactional
@@ -98,7 +120,7 @@ public class TransactionService {
     }
 
     @Transactional(readOnly = true)
-    public List<Object> getTransactionHistory(Long userId, Long walletId, String sortBy, String sortOrder, String transactionType) {
+    public List<Object> getTransactions(Long userId, Long walletId, String sortBy, String sortOrder, String transactionType) {
         if (!isUserAuthorized(userId, walletId)) {
             throw new UserNotAuthorizedException("Access denied: User is not authorized");
         }
@@ -149,7 +171,7 @@ public class TransactionService {
         List<String> validTransactionTypes = Arrays.asList("WITHDRAWAL", "TRANSFER", "DEPOSIT");
         for (String type : transactionTypeList) {
             if (!validTransactionTypes.contains(type.toUpperCase())) {
-                throw new IllegalArgumentException("Invalid transaction type: " + type);
+                throw new InvalidTransactionTypeException("Invalid transaction type: " + type);
             }
         }
     }
