@@ -7,7 +7,13 @@ import lombok.NoArgsConstructor;
 @Getter
 @AllArgsConstructor
 @NoArgsConstructor
-public class TransferDto {
+public class TransactionDto {
+    private String transactionType;
     private Long recipientWalletId;
     private Double amount;
+
+    public TransactionDto(String transactionType, Double amount) {
+        this.transactionType = transactionType;
+        this.amount = amount;
+    }
 }

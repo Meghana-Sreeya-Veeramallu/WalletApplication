@@ -18,7 +18,7 @@ public class UserController {
         this.userService = userService;
     }
 
-    @PostMapping("/register")
+    @PostMapping("")
     public ResponseEntity<?> register(@RequestBody @Valid RegistrationDto request) {
         User user = userService.registerUser(request.getUsername(), request.getPassword(), request.getCurrency());
         String successMessage = "Successfully registered user: " + user.getUsername();

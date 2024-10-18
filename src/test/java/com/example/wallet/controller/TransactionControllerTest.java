@@ -2,6 +2,7 @@ package com.example.wallet.controller;
 
 import com.example.wallet.Enums.TransactionType;
 import com.example.wallet.Exceptions.*;
+import com.example.wallet.dto.TransactionDto;
 import com.example.wallet.model.InterTransaction;
 import com.example.wallet.model.IntraTransaction;
 import com.example.wallet.model.Wallet;
@@ -13,6 +14,7 @@ import org.junit.jupiter.api.Test;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
+import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.MvcResult;
 import org.springframework.test.web.servlet.request.MockMvcRequestBuilders;
@@ -22,6 +24,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.Mockito.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
@@ -46,6 +49,406 @@ class TransactionControllerTest {
         objectMapper = new ObjectMapper();
         userId = 1L;
         walletId = 2L;
+    }
+
+    @Test
+    void testDepositWhenSuccessful() throws Exception {
+        Double amount = 100.0;
+        TransactionDto requestBody = new TransactionDto("deposit", amount);
+        String jsonRequestBody = objectMapper.writeValueAsString(requestBody);
+
+        when(transactionService.deposit(userId, walletId, amount)).thenReturn(amount);
+
+        MvcResult mvcResult = mockMvc.perform(MockMvcRequestBuilders.post("/users/{userId}/wallets/{walletId}/transactions", userId, walletId)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(jsonRequestBody))
+                .andExpect(status().isOk())
+                .andReturn();
+
+        String responseBody = mvcResult.getResponse().getContentAsString();
+        assertTrue(responseBody.contains("Transaction successful: deposit"));
+        assertTrue(responseBody.contains(amount.toString()));
+
+        verify(transactionService, times(1)).deposit(userId, walletId, amount);
+    }
+
+    @Test
+    void testDepositWhenTransactionTypeIsNull() throws Exception {
+        Double amount = 30.0;
+        TransactionDto requestBody = new TransactionDto(null, amount);
+        String jsonRequestBody = objectMapper.writeValueAsString(requestBody);
+
+        mockMvc.perform(MockMvcRequestBuilders.post("/users/{userId}/wallets/{senderWalletId}/transactions", userId, walletId)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(jsonRequestBody))
+                .andExpect(status().isBadRequest())
+                .andExpect(content().string("Transaction type is required and cannot be null"));
+
+        verify(transactionService, times(0)).deposit(userId, walletId, amount);
+    }
+
+    @Test
+    void testDepositWhenAmountIsNull() throws Exception {
+        TransactionDto requestBody = new TransactionDto("deposit", null);
+        String jsonRequestBody = objectMapper.writeValueAsString(requestBody);
+
+        mockMvc.perform(MockMvcRequestBuilders.post("/users/{userId}/wallets/{senderWalletId}/transactions", userId, walletId)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(jsonRequestBody))
+                .andExpect(status().isBadRequest())
+                .andExpect(content().string("Amount is required and cannot be null"));
+
+        verify(transactionService, times(0)).deposit(userId, walletId, null);
+    }
+
+    @Test
+    void testDepositWhenUserNotFoundException() throws Exception {
+        Double amount = 100.0;
+        TransactionDto requestBody = new TransactionDto("deposit", amount);
+        String jsonRequestBody = objectMapper.writeValueAsString(requestBody);
+
+        when(transactionService.deposit(userId, walletId, amount)).thenThrow(new UserNotFoundException("User not found"));
+
+        mockMvc.perform(MockMvcRequestBuilders.post("/users/{userId}/wallets/{walletId}/transactions", userId, walletId)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(jsonRequestBody))
+                .andExpect(status().isNotFound())
+                .andExpect(content().string("User not found"));
+
+        verify(transactionService, times(1)).deposit(userId, walletId, amount);
+    }
+
+    @Test
+    void testDepositWhenWalletDoesNotBelongToOwnerException() throws Exception {
+        Double amount = 100.0;
+        TransactionDto requestBody = new TransactionDto("deposit", amount);
+        String jsonRequestBody = objectMapper.writeValueAsString(requestBody);
+
+        when(transactionService.deposit(userId, walletId, amount)).thenThrow(new UserNotAuthorizedException("Access denied: User is not authorized"));
+
+        mockMvc.perform(MockMvcRequestBuilders.post("/users/{userId}/wallets/{walletId}/transactions", userId, walletId)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(jsonRequestBody))
+                .andExpect(status().isForbidden())
+                .andExpect(content().string("Access denied: User is not authorized"));
+
+        verify(transactionService, times(1)).deposit(userId, walletId, amount);
+    }
+
+    @Test
+    void testDepositWhenDepositAmountIsNegative() throws Exception {
+        Double amount = -100.0;
+        TransactionDto requestBody = new TransactionDto("deposit", amount);
+        String jsonRequestBody = objectMapper.writeValueAsString(requestBody);
+
+        when(transactionService.deposit(userId, walletId, amount)).thenThrow(new DepositAmountMustBePositiveException("Deposit amount must be positive"));
+
+        mockMvc.perform(MockMvcRequestBuilders.post("/users/{userId}/wallets/{walletId}/transactions", userId, walletId)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(jsonRequestBody))
+                .andExpect(status().isBadRequest())
+                .andExpect(content().string("Bad request: Deposit amount must be positive"));
+
+        verify(transactionService, times(1)).deposit(userId, walletId, amount);
+    }
+
+    @Test
+    void testWithdrawWhenSuccessful() throws Exception {
+        Double amount = 100.0;
+        TransactionDto requestBody = new TransactionDto("withdrawal", amount);
+        String jsonRequestBody = objectMapper.writeValueAsString(requestBody);
+
+        when(transactionService.withdraw(userId, walletId, amount)).thenReturn(amount);
+
+        MvcResult mvcResult = mockMvc.perform(MockMvcRequestBuilders.post("/users/{userId}/wallets/{walletId}/transactions", userId, walletId)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(jsonRequestBody))
+                .andExpect(status().isOk())
+                .andReturn();;
+
+        String responseBody = mvcResult.getResponse().getContentAsString();
+        assertTrue(responseBody.contains("Transaction successful: withdrawal"));
+        assertTrue(responseBody.contains(amount.toString()));
+
+        verify(transactionService, times(1)).withdraw(userId, walletId, amount);
+    }
+
+    @Test
+    void testWithdrawWhenTransactionTypeIsNull() throws Exception {
+        Double amount = 30.0;
+        TransactionDto requestBody = new TransactionDto(null, amount);
+        String jsonRequestBody = objectMapper.writeValueAsString(requestBody);
+
+        mockMvc.perform(MockMvcRequestBuilders.post("/users/{userId}/wallets/{senderWalletId}/transactions", userId, walletId)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(jsonRequestBody))
+                .andExpect(status().isBadRequest())
+                .andExpect(content().string("Transaction type is required and cannot be null"));
+
+        verify(transactionService, times(0)).withdraw(userId, walletId, amount);
+    }
+
+    @Test
+    void testWithdrawWhenAmountIsNull() throws Exception {
+        TransactionDto requestBody = new TransactionDto("withdrawal", null);
+        String jsonRequestBody = objectMapper.writeValueAsString(requestBody);
+
+        mockMvc.perform(MockMvcRequestBuilders.post("/users/{userId}/wallets/{senderWalletId}/transactions", userId, walletId)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(jsonRequestBody))
+                .andExpect(status().isBadRequest())
+                .andExpect(content().string("Amount is required and cannot be null"));
+
+        verify(transactionService, times(0)).withdraw(userId, walletId, null);
+    }
+
+    @Test
+    void testWithdrawWhenUserNotFoundException() throws Exception {
+        Double amount = 100.0;
+        TransactionDto requestBody = new TransactionDto("withdrawal", amount);
+        String jsonRequestBody = objectMapper.writeValueAsString(requestBody);
+
+        when(transactionService.withdraw(userId, walletId, amount)).thenThrow(new UserNotFoundException("User not found"));
+
+        mockMvc.perform(MockMvcRequestBuilders.post("/users/{userId}/wallets/{walletId}/transactions", userId, walletId)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(jsonRequestBody))
+                .andExpect(status().isNotFound())
+                .andExpect(content().string("User not found"));
+
+        verify(transactionService, times(1)).withdraw(userId, walletId, amount);
+    }
+
+    @Test
+    void testWithdrawWhenWalletDoesNotBelongToOwnerException() throws Exception {
+        Double amount = 100.0;
+        TransactionDto requestBody = new TransactionDto("withdrawal", amount);
+        String jsonRequestBody = objectMapper.writeValueAsString(requestBody);
+
+        when(transactionService.withdraw(userId, walletId, amount)).thenThrow(new UserNotAuthorizedException("Access denied: User is not authorized"));
+
+        mockMvc.perform(MockMvcRequestBuilders.post("/users/{userId}/wallets/{walletId}/transactions", userId, walletId)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(jsonRequestBody))
+                .andExpect(status().isForbidden())
+                .andExpect(content().string("Access denied: User is not authorized"));
+
+        verify(transactionService, times(1)).withdraw(userId, walletId, amount);
+    }
+
+    @Test
+    void testWithdrawWhenWithdrawAmountIsNegative() throws Exception {
+        Double amount = -100.0;
+        TransactionDto requestBody = new TransactionDto("withdrawal", amount);
+        String jsonRequestBody = objectMapper.writeValueAsString(requestBody);
+
+        when(transactionService.withdraw(userId, walletId, amount)).thenThrow(new WithdrawAmountMustBePositiveException("Withdraw amount must be positive"));
+
+        mockMvc.perform(MockMvcRequestBuilders.post("/users/{userId}/wallets/{walletId}/transactions", userId, walletId)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(jsonRequestBody))
+                .andExpect(status().isBadRequest())
+                .andExpect(content().string("Bad request: Withdraw amount must be positive"));
+
+        verify(transactionService, times(1)).withdraw(userId, walletId, amount);
+    }
+
+    @Test
+    void testWithdrawWhenInsufficientFundsException() throws Exception {
+        Double amount = 50.0;
+        TransactionDto requestBody = new TransactionDto("withdrawal", amount);
+        String jsonRequestBody = objectMapper.writeValueAsString(requestBody);
+
+        when(transactionService.withdraw(userId, walletId, amount)).thenThrow(new InsufficientFundsException("Insufficient funds"));
+
+        mockMvc.perform(MockMvcRequestBuilders.post("/users/{userId}/wallets/{walletId}/transactions", userId, walletId)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(jsonRequestBody))
+                .andExpect(status().isBadRequest())
+                .andExpect(content().string("Bad request: Insufficient funds"));
+
+        verify(transactionService, times(1)).withdraw(userId, walletId, amount);
+    }
+
+    @Test
+    void testTransferWhenSuccessful() throws Exception {
+        Long senderWalletId = 1L;
+        Long recipientWalletId = 2L;
+        Double amount = 30.0;
+        TransactionDto requestBody = new TransactionDto("transfer", recipientWalletId, amount);
+        String jsonRequestBody = objectMapper.writeValueAsString(requestBody);
+
+        when(transactionService.transfer(userId, senderWalletId, recipientWalletId, amount)).thenReturn(70.0);
+
+        MvcResult mvcResult = mockMvc.perform(MockMvcRequestBuilders.post("/users/{userId}/wallets/{senderWalletId}/transactions", userId, senderWalletId)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(jsonRequestBody))
+                .andExpect(status().isOk())
+                .andReturn();
+
+        String responseBody = mvcResult.getResponse().getContentAsString();
+        assertTrue(responseBody.contains("Transaction successful: transfer"));
+        assertTrue(responseBody.contains(amount.toString()));
+
+        verify(transactionService, times(1)).transfer(userId, senderWalletId, recipientWalletId, amount);
+    }
+
+    @Test
+    void testTransferWhenTransactionTypeIsNull() throws Exception {
+        Long senderWalletId = 1L;
+        Long recipientWalletId = 2L;
+        Double amount = 30.0;
+        TransactionDto requestBody = new TransactionDto(null, recipientWalletId, amount);
+        String jsonRequestBody = objectMapper.writeValueAsString(requestBody);
+
+        mockMvc.perform(MockMvcRequestBuilders.post("/users/{userId}/wallets/{senderWalletId}/transactions", userId, senderWalletId)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(jsonRequestBody))
+                .andExpect(status().isBadRequest())
+                .andExpect(content().string("Transaction type is required and cannot be null"));
+
+        verify(transactionService, times(0)).transfer(userId, senderWalletId, recipientWalletId, amount);
+    }
+
+    @Test
+    void testTransferWhenRecipientWalletIdIsNull() throws Exception {
+        Long senderWalletId = 1L;
+        Double amount = 30.0;
+        TransactionDto requestBody = new TransactionDto("transfer", null, amount);
+        String jsonRequestBody = objectMapper.writeValueAsString(requestBody);
+
+        mockMvc.perform(MockMvcRequestBuilders.post("/users/{userId}/wallets/{senderWalletId}/transactions", userId, senderWalletId)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(jsonRequestBody))
+                .andExpect(status().isBadRequest())
+                .andExpect(content().string("Recipient wallet ID is required for transfers"));
+
+        verify(transactionService, times(0)).transfer(userId, senderWalletId, null, amount);
+    }
+
+    @Test
+    void testTransferWhenAmountIsNull() throws Exception {
+        Long senderWalletId = 1L;
+        Long recipientWalletId = 2L;
+        TransactionDto requestBody = new TransactionDto("transfer", recipientWalletId, null);
+        String jsonRequestBody = objectMapper.writeValueAsString(requestBody);
+
+        mockMvc.perform(MockMvcRequestBuilders.post("/users/{userId}/wallets/{senderWalletId}/transactions", userId, senderWalletId)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(jsonRequestBody))
+                .andExpect(status().isBadRequest())
+                .andExpect(content().string("Amount is required and cannot be null"));
+
+        verify(transactionService, times(0)).transfer(userId, senderWalletId, recipientWalletId, null);
+    }
+
+    @Test
+    void testTransferWhenSenderNotFoundException() throws Exception {
+        Long senderWalletId = 1L;
+        Long recipientWalletId = 2L;
+        Double amount = 30.0;
+        TransactionDto requestBody = new TransactionDto("transfer", recipientWalletId, amount);
+        String jsonRequestBody = objectMapper.writeValueAsString(requestBody);
+
+        when(transactionService.transfer(userId, senderWalletId, recipientWalletId, amount)).thenThrow(new UserNotFoundException("Sender not found"));
+
+        mockMvc.perform(MockMvcRequestBuilders.post("/users/{userId}/wallets/{senderWalletId}/transactions", userId, senderWalletId)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(jsonRequestBody))
+                .andExpect(status().isNotFound())
+                .andExpect(content().string("User not found"));
+
+        verify(transactionService, times(1)).transfer(userId, senderWalletId, recipientWalletId, amount);
+    }
+
+    @Test
+    void testTransferWhenRecipientNotFoundException() throws Exception {
+        Long senderWalletId = 1L;
+        Long recipientWalletId = 2L;
+        Double amount = 30.0;
+        TransactionDto requestBody = new TransactionDto("transfer", recipientWalletId, amount);
+        String jsonRequestBody = objectMapper.writeValueAsString(requestBody);
+
+        when(transactionService.transfer(userId, senderWalletId, recipientWalletId, amount)).thenThrow(new UserNotFoundException("Recipient not found"));
+
+        mockMvc.perform(MockMvcRequestBuilders.post("/users/{userId}/wallets/{senderWalletId}/transactions", userId, senderWalletId)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(jsonRequestBody))
+                .andExpect(status().isNotFound())
+                .andExpect(content().string("User not found"));
+
+        verify(transactionService, times(1)).transfer(userId, senderWalletId, recipientWalletId, amount);
+    }
+
+    @Test
+    void testTransferWhenWalletDoesNotBelongToOwnerException() throws Exception {
+        Long senderWalletId = 1L;
+        Long recipientWalletId = 2L;
+        Double amount = 30.0;
+        TransactionDto requestBody = new TransactionDto("transfer", recipientWalletId, amount);
+        String jsonRequestBody = objectMapper.writeValueAsString(requestBody);
+
+        when(transactionService.transfer(userId, senderWalletId, recipientWalletId, amount)).thenThrow(new UserNotAuthorizedException("Access denied: User is not authorized"));
+
+        mockMvc.perform(MockMvcRequestBuilders.post("/users/{userId}/wallets/{senderWalletId}/transactions", userId, senderWalletId)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(jsonRequestBody))
+                .andExpect(status().isForbidden())
+                .andExpect(content().string("Access denied: User is not authorized"));
+
+        verify(transactionService, times(1)).transfer(userId, senderWalletId, recipientWalletId, amount);
+    }
+
+    @Test
+    void testTransferWhenInsufficientFundsException() throws Exception {
+        Long senderWalletId = 1L;
+        Long recipientWalletId = 2L;
+        Double amount = 50.0;
+        TransactionDto requestBody = new TransactionDto("transfer", recipientWalletId, amount);
+        String jsonRequestBody = objectMapper.writeValueAsString(requestBody);
+
+        when(transactionService.transfer(userId, senderWalletId, recipientWalletId, amount)).thenThrow(new InsufficientFundsException("Insufficient funds"));
+
+        mockMvc.perform(MockMvcRequestBuilders.post("/users/{userId}/wallets/{senderWalletId}/transactions", userId, senderWalletId)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(jsonRequestBody))
+                .andExpect(status().isBadRequest())
+                .andExpect(content().string("Bad request: Insufficient funds"));
+
+        verify(transactionService, times(1)).transfer(userId, senderWalletId, recipientWalletId, amount);
+    }
+
+    @Test
+    void testTransferWhenTransferAmountIsNegative() throws Exception {
+        Long senderWalletId = 1L;
+        Long recipientWalletId = 2L;
+        Double amount = -30.0;
+        TransactionDto requestBody = new TransactionDto("transfer", recipientWalletId, amount);
+        String jsonRequestBody = objectMapper.writeValueAsString(requestBody);
+
+        when(transactionService.transfer(userId, senderWalletId, recipientWalletId, amount)).thenThrow(new TransferAmountMustBePositiveException("Transfer amount must be positive"));
+
+        mockMvc.perform(MockMvcRequestBuilders.post("/users/{userId}/wallets/{senderWalletId}/transactions", userId, senderWalletId)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(jsonRequestBody))
+                .andExpect(status().isBadRequest())
+                .andExpect(content().string("Bad request: Transfer amount must be positive"));
+
+        verify(transactionService, times(1)).transfer(userId, senderWalletId, recipientWalletId, amount);
+    }
+
+    @Test
+    void testInvalidTransactionTypeException() throws Exception {
+        TransactionDto requestBody = new TransactionDto("random", 30.0);
+        String jsonRequestBody = objectMapper.writeValueAsString(requestBody);
+
+        mockMvc.perform(MockMvcRequestBuilders.post("/users/{userId}/wallets/{senderWalletId}/transactions", userId, walletId)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(jsonRequestBody))
+                .andExpect(status().isBadRequest())
+                .andExpect(content().string("Invalid transaction type: random"));
+
+        verify(transactionService, times(0)).withdraw(userId, walletId, null);
     }
 
     @Test

@@ -11,6 +11,7 @@ import org.junit.jupiter.api.Test;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.MvcResult;
@@ -50,7 +51,7 @@ class UserControllerTest {
 
         when(userService.registerUser(username, password, CurrencyType.INR)).thenReturn(mockUser);
 
-        MvcResult mvcResult = mockMvc.perform(MockMvcRequestBuilders.post("/users/register")
+        MvcResult mvcResult = mockMvc.perform(MockMvcRequestBuilders.post("/users")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(jsonRequestBody))
                 .andExpect(status().isOk()).andReturn();
@@ -72,7 +73,7 @@ class UserControllerTest {
 
         when(userService.registerUser(username, password, CurrencyType.USD)).thenReturn(mockUser);
 
-        MvcResult mvcResult = mockMvc.perform(MockMvcRequestBuilders.post("/users/register")
+        MvcResult mvcResult = mockMvc.perform(MockMvcRequestBuilders.post("/users")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(jsonRequestBody))
                 .andExpect(status().isOk()).andReturn();
@@ -93,7 +94,7 @@ class UserControllerTest {
 
         when(userService.registerUser(username, password, CurrencyType.INR)).thenThrow(new UsernameCannotBeNullOrEmptyException("Username cannot be null or empty"));
 
-        mockMvc.perform(MockMvcRequestBuilders.post("/users/register")
+        mockMvc.perform(MockMvcRequestBuilders.post("/users")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(jsonRequestBody))
                 .andExpect(status().isBadRequest())
@@ -111,7 +112,7 @@ class UserControllerTest {
 
         when(userService.registerUser(username, password, CurrencyType.INR)).thenThrow(new PasswordCannotBeNullOrEmptyException("Password cannot be null or empty"));
 
-        mockMvc.perform(MockMvcRequestBuilders.post("/users/register")
+        mockMvc.perform(MockMvcRequestBuilders.post("/users")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(jsonRequestBody))
                 .andExpect(status().isBadRequest())
@@ -129,12 +130,31 @@ class UserControllerTest {
 
         when(userService.registerUser(username, password, null)).thenThrow(new CurrencyCannotBeNullException("Currency cannot be null"));
 
-        mockMvc.perform(MockMvcRequestBuilders.post("/users/register")
+        mockMvc.perform(MockMvcRequestBuilders.post("/users")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(jsonRequestBody))
                 .andExpect(status().isBadRequest())
                 .andExpect(content().string("Bad request: Currency cannot be null"));
 
         verify(userService, times(1)).registerUser(username, password, null);
+    }
+
+    @Test
+    void testRegisterWhenUsernameAlreadyExists() throws Exception {
+        String username = "testUser";
+        String password = "testPassword";
+        RegistrationDto requestBody = new RegistrationDto(username, password, CurrencyType.INR);
+        String jsonRequestBody = objectMapper.writeValueAsString(requestBody);
+        User mockUser = new User(username, password, CurrencyType.INR);
+
+        when(userService.registerUser(username, password, CurrencyType.INR)).thenThrow(new DataIntegrityViolationException("Username already exists"));
+
+        mockMvc.perform(MockMvcRequestBuilders.post("/users")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(jsonRequestBody))
+                .andExpect(status().isBadRequest())
+                .andExpect(content().string("Bad Request: Username already exists"));
+
+        verify(userService, times(1)).registerUser(username, password, CurrencyType.INR);
     }
 }
