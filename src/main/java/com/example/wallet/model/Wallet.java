@@ -3,7 +3,6 @@ package com.example.wallet.model;
 import com.example.wallet.Enums.CurrencyType;
 import com.example.wallet.Exceptions.DepositAmountMustBePositiveException;
 import com.example.wallet.Exceptions.InsufficientFundsException;
-import com.example.wallet.Exceptions.TransferAmountMustBePositiveException;
 import com.example.wallet.Exceptions.WithdrawAmountMustBePositiveException;
 import jakarta.persistence.*;
 import lombok.Getter;
@@ -16,6 +15,7 @@ public class Wallet {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
+    @Getter
     private Double balance;
 
     @Setter
@@ -23,6 +23,7 @@ public class Wallet {
     @JoinColumn(name = "user_id", referencedColumnName = "id", nullable = false)
     private User user;
 
+    @Getter
     @Enumerated(EnumType.STRING)
     private CurrencyType currency;
 
@@ -53,26 +54,5 @@ public class Wallet {
         }
         this.balance -= amount;
         return this.balance;
-    }
-
-    public Double transfer(Wallet recipientWallet, Double amount) {
-        if (amount <= 0) {
-            throw new TransferAmountMustBePositiveException("Transfer amount must be positive");
-        }
-        if (this.balance < amount) {
-            throw new InsufficientFundsException("Insufficient funds for transfer");
-        }
-
-        double amountInRecipientCurrency = getAmountInRecipientCurrency(recipientWallet, amount);
-
-        this.balance -= amount;
-        recipientWallet.balance += amountInRecipientCurrency;
-
-        return this.balance;
-    }
-
-    private double getAmountInRecipientCurrency(Wallet recipientWallet, Double amount) {
-        double amountInBaseCurrency = this.currency.toBaseCurrency(amount);
-        return recipientWallet.currency.fromBaseCurrency(amountInBaseCurrency);
     }
 }

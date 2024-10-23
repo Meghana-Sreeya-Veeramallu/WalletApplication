@@ -5,7 +5,6 @@ import static org.junit.jupiter.api.Assertions.*;
 import com.example.wallet.Enums.CurrencyType;
 import com.example.wallet.Exceptions.DepositAmountMustBePositiveException;
 import com.example.wallet.Exceptions.InsufficientFundsException;
-import com.example.wallet.Exceptions.TransferAmountMustBePositiveException;
 import com.example.wallet.Exceptions.WithdrawAmountMustBePositiveException;
 import org.junit.jupiter.api.Test;
 
@@ -97,60 +96,6 @@ public class WalletTest {
     }
 
     @Test
-    void testSuccessfulTransfer() {
-        Wallet senderWallet = new Wallet();
-        Wallet recipientWallet = new Wallet();
-        Double amount = 30.0;
-
-        senderWallet.deposit(100.0);
-        Double newBalance = senderWallet.transfer(recipientWallet, amount);
-
-        assertEquals(70.0, newBalance);
-    }
-
-    @Test
-    void testTransferWhenAmountIsNegative() {
-        Wallet senderWallet = new Wallet();
-        Wallet recipientWallet = new Wallet();
-        Double amount = -10.0;
-
-        senderWallet.deposit(100.0);
-
-        Exception exception = assertThrows(TransferAmountMustBePositiveException.class, () -> {
-            senderWallet.transfer(recipientWallet, amount);
-        });
-        assertEquals("Transfer amount must be positive", exception.getMessage());
-    }
-
-    @Test
-    void testTransferWhenInsufficientFunds() {
-        Wallet senderWallet = new Wallet();
-        Wallet recipientWallet = new Wallet();
-        Double amount = 150.0;
-
-        senderWallet.deposit(100.0);
-
-        Exception exception = assertThrows(InsufficientFundsException.class, () -> {
-            senderWallet.transfer(recipientWallet, amount);
-        });
-        assertEquals("Insufficient funds for transfer", exception.getMessage());
-    }
-
-    @Test
-    void testTransferZeroAmount() {
-        Wallet senderWallet = new Wallet();
-        Wallet recipientWallet = new Wallet();
-        Double amount = 0.0;
-
-        senderWallet.deposit(100.0);
-
-        Exception exception = assertThrows(TransferAmountMustBePositiveException.class, () -> {
-            senderWallet.transfer(recipientWallet, amount);
-        });
-        assertEquals("Transfer amount must be positive", exception.getMessage());
-    }
-
-    @Test
     void testWalletInitializationWithCurrency() {
         Wallet wallet = new Wallet(CurrencyType.EUR);
 
@@ -200,56 +145,6 @@ public class WalletTest {
 
         assertThrows(WithdrawAmountMustBePositiveException.class, () -> {
             wallet.withdraw(-50.0);
-        });
-    }
-
-    @Test
-    void testTransferFromUSDtoEUR() {
-        Wallet senderWallet = new Wallet(CurrencyType.USD);
-        Wallet recipientWallet = new Wallet(CurrencyType.EUR);
-        senderWallet.deposit(100.0);
-        Double amountToTransfer = 100.0;
-        Double expectedSenderBalance = 0.0;
-
-        Double newSenderBalance = senderWallet.transfer(recipientWallet, amountToTransfer);
-
-        assertEquals(expectedSenderBalance, newSenderBalance);
-    }
-
-    @Test
-    void testTransferFromEURtoJPY() {
-        Wallet senderWallet = new Wallet(CurrencyType.EUR);
-        Wallet recipientWallet = new Wallet(CurrencyType.JPY);
-        senderWallet.deposit(200.0);
-        Double amountToTransfer = 100.0;
-        Double expectedSenderBalance = 100.0;
-
-        Double newSenderBalance = senderWallet.transfer(recipientWallet, amountToTransfer);
-
-        assertEquals(expectedSenderBalance, newSenderBalance);
-    }
-
-    @Test
-    void testTransferInsufficientFundsExceptionFromJPYtoINR() {
-        Wallet senderWallet = new Wallet(CurrencyType.JPY);
-        Wallet recipientWallet = new Wallet(CurrencyType.INR);
-        senderWallet.deposit(5000.0);
-        Double amountToTransfer = 10000.0;
-
-        assertThrows(InsufficientFundsException.class, () -> {
-            senderWallet.transfer(recipientWallet, amountToTransfer);
-        });
-    }
-
-    @Test
-    void testTransferBetweenGBPtoUSD() {
-        Wallet senderWallet = new Wallet(CurrencyType.GBP);
-        Wallet recipientWallet = new Wallet(CurrencyType.USD);
-        senderWallet.deposit(150.0);
-        Double amountToTransfer = -75.0;
-
-        assertThrows(TransferAmountMustBePositiveException.class, () -> {
-            senderWallet.transfer(recipientWallet, amountToTransfer);
         });
     }
 }

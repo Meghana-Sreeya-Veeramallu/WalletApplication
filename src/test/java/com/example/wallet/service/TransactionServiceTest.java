@@ -45,12 +45,14 @@ public class TransactionServiceTest {
     private IntraTransactionRepository intraTransactionRepository;
     @Mock
     private InterTransactionRepository interTransactionRepository;
+    @Mock
+    private CurrencyConversionService currencyConversionService;
 
     @BeforeEach
     void setUp() {
         MockitoAnnotations.openMocks(this);
         walletId = 1L;
-        wallet = new Wallet();
+        wallet = new Wallet(CurrencyType.INR);
         userId = 10L;
         mockWallet = mock(Wallet.class);
 
@@ -99,12 +101,14 @@ public class TransactionServiceTest {
             User user = new User("testUser", "password", CurrencyType.INR);
             when(userRepository.findById(userId)).thenReturn(Optional.of(user));
             when(walletRepository.findIdByUserId(userId)).thenReturn(Optional.of(walletId));
+            when(mockWallet.getBalance()).thenReturn(150.0);
+            when(mockWallet.getCurrency()).thenReturn(CurrencyType.INR);
             when(walletRepository.findById(walletId)).thenReturn(Optional.of(mockWallet));
             when(walletRepository.findById(recipientWalletId)).thenReturn(Optional.of(wallet));
+            when(currencyConversionService.convert(anyString(), anyString(), anyDouble())).thenReturn(100.0);
 
             transactionService.createTransaction(userId, walletId, 5L, transferAmount, "transfer");
 
-            verify(mockWallet, times(1)).transfer(wallet, transferAmount);
             verify(interTransactionRepository, times(1)).save(any(InterTransaction.class));
         }
 
@@ -275,6 +279,7 @@ public class TransactionServiceTest {
             when(walletRepository.findIdByUserId(userId)).thenReturn(Optional.of(walletId));
             when(walletRepository.findById(senderWalletId)).thenReturn(Optional.of(new Wallet()));
             when(walletRepository.findById(recipientWalletId)).thenReturn(Optional.of(new Wallet()));
+            when(currencyConversionService.convert(anyString(), anyString(), anyDouble())).thenReturn(30.0);
 
             transactionService.deposit(userId, senderWalletId, 100.0);
             Double newBalance = transactionService.transfer(userId, senderWalletId, recipientWalletId, transferAmount);

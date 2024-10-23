@@ -1,10 +1,7 @@
 package com.example.wallet.service;
 
 import com.example.wallet.Enums.TransactionType;
-import com.example.wallet.Exceptions.InvalidTransactionTypeException;
-import com.example.wallet.Exceptions.RecipientWalletIdCannotBeNullException;
-import com.example.wallet.Exceptions.UserNotAuthorizedException;
-import com.example.wallet.Exceptions.UserNotFoundException;
+import com.example.wallet.Exceptions.*;
 import com.example.wallet.model.InterTransaction;
 import com.example.wallet.model.IntraTransaction;
 import com.example.wallet.model.User;
@@ -30,13 +27,15 @@ public class TransactionService {
     private final WalletRepository walletRepository;
     private final IntraTransactionRepository intraTransactionRepository;
     private final InterTransactionRepository interTransactionRepository;
+    private final CurrencyConversionService currencyConversionService;
 
     @Autowired
-    public TransactionService(UserRepository userRepository, WalletRepository walletRepository, IntraTransactionRepository intraTransactionRepository, InterTransactionRepository interTransactionRepository) {
+    public TransactionService(UserRepository userRepository, WalletRepository walletRepository, IntraTransactionRepository intraTransactionRepository, InterTransactionRepository interTransactionRepository, CurrencyConversionService currencyConversionService) {
         this.userRepository = userRepository;
         this.walletRepository = walletRepository;
         this.intraTransactionRepository = intraTransactionRepository;
         this.interTransactionRepository = interTransactionRepository;
+        this.currencyConversionService = currencyConversionService;
     }
 
     @Transactional
@@ -101,7 +100,22 @@ public class TransactionService {
         Wallet recipientWallet = walletRepository.findById(recipientWalletId)
                 .orElseThrow(() -> new UserNotFoundException("Recipient not found"));
 
-        Double senderNewBalance = senderWallet.transfer(recipientWallet, amount);
+        if (amount <= 0) {
+            throw new TransferAmountMustBePositiveException("Transfer amount must be positive");
+        }
+        if (senderWallet.getBalance() < amount) {
+            throw new InsufficientFundsException("Insufficient funds for transfer");
+        }
+
+        double amountInRecipientCurrency = currencyConversionService.convert(
+                senderWallet.getCurrency().name(),
+                recipientWallet.getCurrency().name(),
+                amount
+        );
+
+        Double senderNewBalance = senderWallet.withdraw(amount);
+        recipientWallet.deposit(amountInRecipientCurrency);
+
         walletRepository.save(senderWallet);
         walletRepository.save(recipientWallet);
 
