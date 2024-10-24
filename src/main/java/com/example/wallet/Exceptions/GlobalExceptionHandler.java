@@ -79,6 +79,11 @@ public class GlobalExceptionHandler {
         return ResponseEntity.badRequest().body("Bad Request: Username already exists");
     }
 
+    @ExceptionHandler(ServerUnavailableException.class)
+    public ResponseEntity<String> handleServerUnavailable(ServerUnavailableException e) {
+        return ResponseEntity.internalServerError().body("An error occurred: Server is unavailable");
+    }
+
     @ExceptionHandler(Exception.class)
     public ResponseEntity<String> handleGeneralException(Exception e) {
         return ResponseEntity.internalServerError().body("An error occurred: " + e.getMessage());

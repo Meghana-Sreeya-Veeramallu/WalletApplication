@@ -61,18 +61,32 @@ public class CurrencyConversionServiceTest {
     }
 
     @Test
-    void testConvertThrowsException() {
+    void testConvertThrowsServerUnavailableException() {
         String fromCurrency = "INR";
         String toCurrency = "USD";
         double amount = 100.0;
 
         when(blockingStub.convert(any(ConvertRequest.class))).thenThrow(new StatusRuntimeException(io.grpc.Status.UNAVAILABLE));
 
-        RuntimeException exception = assertThrows(RuntimeException.class, () -> {
-            currencyConversionService.convert(fromCurrency, toCurrency, amount);
-        });
+        RuntimeException exception = assertThrows(RuntimeException.class, () ->
+            currencyConversionService.convert(fromCurrency, toCurrency, amount));
 
-        assertEquals("Error occurred while converting currency", exception.getMessage());
+        assertEquals("Currency conversion failed: Server is unavailable", exception.getMessage());
+        verify(blockingStub, times(1)).convert(any(ConvertRequest.class));
+    }
+
+    @Test
+    void testConvertThrowsRuntimeException() {
+        String fromCurrency = "INR";
+        String toCurrency = "USD";
+        double amount = 100.0;
+
+        when(blockingStub.convert(any(ConvertRequest.class))).thenThrow(new RuntimeException("Run time error"));
+
+        RuntimeException exception = assertThrows(RuntimeException.class, () ->
+            currencyConversionService.convert(fromCurrency, toCurrency, amount));
+
+        assertEquals("Currency conversion failed: Run time error", exception.getMessage());
         verify(blockingStub, times(1)).convert(any(ConvertRequest.class));
     }
 }
